@@ -1,15 +1,526 @@
-// 팝업 열기 함수에 터치 강제 방지 해제 추가
-function openAssetPopup(assetType) {
-  // ... 기존 데이터 처리 로직 ...
-  
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap');
+  :root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--border:#ffffff0f;--border2:#ffffff18;--text:#e8e8f0;--text2:#9090a8;--text3:#55556a;--accent:#6c6cff;--pos:#3ecf8e;--neg:#ff6b6b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,#6c6cff12 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,#3ecf8e0a 0%,transparent 50%);pointer-events:none}
+  #app{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border2)}
+  .hdr-left{display:flex;align-items:center;gap:10px}
+  .hdr-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#6c6cff,#3ecf8e);display:flex;align-items:center;justify-content:center;font-size:16px}
+  .hdr-title{font-size:14px;font-weight:600}
+  .hdr-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);box-shadow:0 0 8px var(--pos);flex-shrink:0}
+  .live-dot.loading{background:#f5c842;box-shadow:0 0 8px #f5c842;animation:blink .8s infinite}
+  .live-dot.error{background:var(--neg);box-shadow:0 0 8px var(--neg)}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  .sync-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--accent);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;white-space:nowrap}
+  .sync-btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{background:#ff6b6b18;border:1px solid #ff6b6b40;border-radius:10px;padding:12px 14px;color:#ff9090;font-size:12px;margin-bottom:14px;display:none;line-height:1.6}
+  .loading-wrap{display:flex;align-items:center;justify-content:center;min-height:260px;flex-direction:column;gap:12px;color:var(--text3)}
+  .spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .filter-wrap{margin-bottom:16px}
+  .filter-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:7px;letter-spacing:.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;user-select:none;font-weight:500}
+  .chip.on{border-color:var(--accent);background:#6c6cff18;color:var(--accent)}
+  .tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:fit-content}
+  .tab{padding:6px 16px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;font-weight:500}
+  .tab.on{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px #0004}
+  .mcard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .mcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .mcard-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;margin-bottom:8px}
+  .mcard-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace}
+  .mcard-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace}
+  .pos{color:var(--pos)!important}.neg{color:var(--neg)!important}.neu{color:var(--text)!important}
+  .chart2{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+  .ccard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .ccard-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;margin-bottom:12px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .li{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+  .ld{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+  .asset-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+  .acard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .acard-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:'DM Mono',monospace;margin-bottom:6px}
+  .acard-val{font-size:14px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+  .acard-rate{font-size:11px;font-weight:500;margin-top:2px;font-family:'DM Mono',monospace}
+  .drill-sec{margin-bottom:12px}
+  .drill-hdr{font-size:10px;font-weight:600;color:var(--text2);margin-bottom:6px;display:flex;justify-content:space-between;font-family:'DM Mono',monospace}
+  .drill-bg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .drill-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;border-radius:7px;padding:4px 6px;margin-left:-6px;margin-right:-6px;transition:background .15s}
+  .drill-row:last-child{margin-bottom:0}
+  .drill-row:hover{background:var(--bg3)}
+  .drill-row:hover .dn{color:var(--text)}
+  .drill-row-hint{font-size:9px;color:var(--text3);margin-left:auto;flex-shrink:0;font-family:'DM Mono',monospace}
+  .dn{width:90px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;font-family:'DM Mono',monospace;font-size:10px;transition:color .15s}
+  .dtrack{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+  .dfill{height:100%;border-radius:2px}
+  .damt{width:70px;text-align:right;color:var(--text);font-weight:500;flex-shrink:0;font-size:10px;font-family:'DM Mono',monospace}
+  .drate{width:52px;text-align:right;flex-shrink:0;font-size:10px;font-weight:500;font-family:'DM Mono',monospace}
+  .tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
+  .tbl-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
+  th{color:var(--text3);font-weight:500;padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-size:10px;font-family:'DM Mono',monospace}
+  th:first-child,th:nth-child(2),th:nth-child(3){text-align:left}
+  td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-size:11px;font-family:'DM Mono',monospace}
+  td:first-child{text-align:left}
+  td:nth-child(2){text-align:left;color:var(--text);font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+  td:nth-child(3){text-align:left}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg3)}
+  .tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;font-family:'DM Mono',monospace}
+  .t-연금저축{background:#6c6cff18;color:#9090ff;border:1px solid #6c6cff30}
+  .t-ISA{background:#3ecf8e18;color:#3ecf8e;border:1px solid #3ecf8e30}
+  .t-IRP{background:#f5c84218;color:#f5c842;border:1px solid #f5c84230}
+  .t-일반{background:#ff6b6b18;color:#ff9090;border:1px solid #ff6b6b30}
+  .t-CMA{background:#79c0ff18;color:#79c0ff;border:1px solid #79c0ff30}
+  .t-성장주{background:#6c6cff15;color:#9090ff;border:1px solid #6c6cff20}
+  .t-배당주{background:#3ecf8e15;color:#3ecf8e;border:1px solid #3ecf8e20}
+  .t-채권{background:#f5c84215;color:#f5c842;border:1px solid #f5c84220}
+  .t-금{background:#ff9f4315;color:#ff9f43;border:1px solid #ff9f4320}
+  .t-현금{background:#ffffff10;color:#ffffff50;border:1px solid #ffffff15}
+  .panel{display:none}.panel.on{display:block}
+  @media(min-width:640px){.mcard-grid{grid-template-columns:repeat(4,1fr)}.chart2{grid-template-columns:1fr 1fr}.asset-cards{grid-template-columns:repeat(4,1fr)}}
+
+  /* ── 팝업 오버레이 (아이폰 호환 수정 완료) ── */
+  .popup-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:#00000088;backdrop-filter:blur(6px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  .popup-overlay.open{opacity:1;pointer-events:all;}
+  .popup-sheet{
+  width:100%;max-width:540px;
+  background:var(--bg2);border-top:1px solid var(--border2);
+  border-radius:20px 20px 0 0;
+  padding:0 0 env(safe-area-inset-bottom,16px);
+  max-height:85vh;overflow:hidden;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  }
+  .popup-overlay.open .popup-sheet{transform:translateY(0);}
+  .popup-drag{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0;flex-shrink:0}
+  .popup-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .popup-title-wrap{display:flex;align-items:center;gap:10px}
+  .popup-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+  .popup-title{font-size:14px;font-weight:600}
+  .popup-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
+  .popup-close{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .popup-summary{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .ps-item{background:var(--bg3);border-radius:8px;padding:10px 12px}
+  .ps-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:'DM Mono',monospace;margin-bottom:4px}
+  .ps-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+  .popup-body{overflow-y:auto;padding:12px 18px 20px;flex:1}
+  .popup-section-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:'DM Mono',monospace;margin-bottom:8px}
+
+  /* 팝업 종목 행 */
+  .pop-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--bg3);border-radius:10px;margin-bottom:8px;
+  }
+  .pop-item:last-child{margin-bottom:0}
+  .pop-rank{width:18px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0;text-align:center}
+  .pop-info{flex:1;min-width:0}
+  .pop-nm{font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pop-acct{font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace}
+  .pop-bar-wrap{width:60px;flex-shrink:0}
+  .pop-bar-track{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-bottom:3px}
+  .pop-bar-fill{height:100%;border-radius:2px}
+  .pop-pct{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-align:right}
+  .pop-right{text-align:right;flex-shrink:0}
+  .pop-eval{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
+  .pop-rate{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;margin-top:1px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-icon">📊</div>
+      <div>
+        <div class="hdr-title">포트폴리오 대시보드</div>
+        <div class="hdr-sub" id="hdrSub">데이터 로드 중...</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="live-dot loading" id="liveDot"></div>
+      <button class="sync-btn" id="syncBtn" onclick="loadData()">↻ 새로고침</button>
+    </div>
+  </div>
+
+  <div class="err" id="errBanner"></div>
+
+  <div id="loadingWrap" class="loading-wrap">
+    <div class="spinner"></div>
+    <div style="font-size:12px">구글 시트 연동 중...</div>
+  </div>
+
+  <div id="mainContent" style="display:none">
+    <div class="filter-wrap">
+      <div class="filter-label">ACCOUNT FILTER</div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="tabs">
+      <div class="tab on" data-tab="overview" onclick="switchTab(this)">전체현황</div>
+      <div class="tab" data-tab="asset" onclick="switchTab(this)">자산유형</div>
+      <div class="tab" data-tab="table" onclick="switchTab(this)">종목테이블</div>
+    </div>
+
+    <div id="p-overview" class="panel on">
+      <div class="mcard-grid">
+        <div class="mcard"><div class="mcard-lbl">총 평가금액</div><div class="mcard-val neu" id="m-eval">—</div><div class="mcard-sub" id="m-eval-sub"></div></div>
+        <div class="mcard"><div class="mcard-lbl">투자 원금</div><div class="mcard-val neu" id="m-cost">—</div></div>
+        <div class="mcard"><div class="mcard-lbl">평가 손익</div><div class="mcard-val" id="m-pnl">—</div></div>
+        <div class="mcard"><div class="mcard-lbl">수익률</div><div class="mcard-val" id="m-rate">—</div></div>
+      </div>
+      <div class="chart2">
+        <div class="ccard"><div class="ccard-ttl">종목별 비중</div>
+          <div style="position:relative;height:220px"><canvas id="c-pie"></canvas></div>
+          <div class="legend" id="leg-pie"></div>
+        </div>
+        <div class="ccard"><div class="ccard-ttl">종목별 수익률</div>
+          <div style="position:relative" id="wr-bar"><canvas id="c-bar"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-asset" class="panel">
+      <div class="asset-cards" id="asset-cards"></div>
+      <div class="chart2">
+        <div class="ccard"><div class="ccard-ttl">자산유형별 비중</div>
+          <div style="position:relative;height:220px"><canvas id="c-pie2"></canvas></div>
+          <div class="legend" id="leg-pie2"></div>
+        </div>
+        <div class="ccard"><div class="ccard-ttl">자산유형별 수익률</div>
+          <div style="position:relative" id="wr-bar2"><canvas id="c-bar2"></canvas></div>
+        </div>
+      </div>
+      <div id="drill"></div>
+    </div>
+
+    <div id="p-table" class="panel">
+      <div class="tbl-wrap"><div class="tbl-ttl">전체 종목 현황</div>
+        <table><thead><tr>
+          <th>계좌</th><th>종목명</th><th>유형</th>
+          <th>수량</th><th>현재가</th><th>매입금액</th><th>평가금액</th><th>손익률</th>
+        </tr></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 팝업 ── -->
+<div class="popup-overlay" id="popOverlay" onclick="closePopup(event)">
+  <div class="popup-sheet" id="popSheet">
+    <div class="popup-drag"></div>
+    <div class="popup-head">
+      <div class="popup-title-wrap">
+        <div class="popup-dot" id="popDot"></div>
+        <div>
+          <div class="popup-title" id="popTitle">—</div>
+          <div class="popup-sub" id="popSub">—</div>
+        </div>
+      </div>
+      <div class="popup-close" onclick="closePopup(event)">✕</div>
+    </div>
+    <div class="popup-summary" id="popSummary"></div>
+    <div class="popup-body" id="popBody"></div>
+  </div>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbwWi3r9lvpR4Slhbd7czTnFVjNcfkC64MMDH6pV04VMqXhxYbCa2qE4lXpR5PSFF2TK7Q/exec";
+const CASH_KW = ["예수금","현금성자산","미국달러","달러"];
+const AC = {성장주:"#6c6cff",배당주:"#3ecf8e",채권:"#f5c842",금:"#ff9f43",현금:"#55556a"};
+const PAL = ["#6c6cff","#3ecf8e","#f5c842","#ff9f43","#ff6b6b","#79c0ff","#56d364","#ffa657","#d2a8ff","#a5d6ff","#7ee787","#e3b341","#ff7b72"];
+
+let DATA=[], sel=new Set(["all"]), tab="overview", CH={};
+
+const isCash = nm => CASH_KW.some(k=>nm&&nm.includes(k));
+const toN = v => {
+  if(v===null||v===undefined||v===""||v==="-")return null;
+  if(typeof v==="number")return isNaN(v)?null:v;
+  const s=String(v).replace(/[,₩원\s%]/g,"").trim();
+  if(!s||s==="-")return null;
+  const n=parseFloat(s); return isNaN(n)?null:n;
+};
+const fmt  = n => n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
+const fmtR = r => r==null?"—":(r>=0?"+":"")+r.toFixed(2)+"%";
+const fmtS = n => {
+  const a=Math.abs(n);
+  return a>=100000000?(n<0?"-":"")+(Math.round(a/10000000)/10)+"억"
+        :a>=10000?(n<0?"-":"")+Math.round(a/10000)+"만"
+        :Math.round(n).toLocaleString("ko-KR");
+};
+const qF = n=>n==null?"—":(Number.isInteger(n)?n.toLocaleString("ko-KR"):n.toFixed(4));
+const dc = k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
+
+// ── 데이터 로드 ──
+async function loadData(){
+  const dot=document.getElementById("liveDot"),btn=document.getElementById("syncBtn");
+  const err=document.getElementById("errBanner"),ld=document.getElementById("loadingWrap");
+  const main=document.getElementById("mainContent");
+  DATA=[];dot.className="live-dot loading";btn.disabled=true;
+  err.style.display="none";ld.style.display="flex";main.style.display="none";
+  try{
+    const res=await fetch(API+"?t="+Date.now(),{method:"GET",redirect:"follow"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const json=JSON.parse(await res.text());
+    if(json&&json.error)throw new Error("Apps Script: "+json.error);
+    if(!Array.isArray(json)||!json.length)throw new Error("데이터 없음");
+    DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
+      const nm=String(r["상품명"]||"").trim();
+      const cost=toN(r["매입금액"])??0;
+      let ev=toN(r["평가금액"])??0;
+      if(isCash(nm))ev=Math.abs(cost);
+      return{
+        계좌:String(r["계좌"]||"").trim(),상품명:nm,
+        자산유형:String(r["자산유형"]||"").trim(),세부분류:String(r["세부분류"]||"").trim(),
+        보유수량:toN(r["보유수량"]),현재가:toN(r["현재가"]),평균매입가:toN(r["평균매입가"]),
+        매입금액:cost,평가금액:ev,평가손익:toN(r["평가손익"])??0,손익률:toN(r["손익률"])??0
+      };
+    });
+    if(!DATA.length)throw new Error("유효 데이터 없음");
+    dot.className="live-dot";
+    document.getElementById("hdrSub").textContent="연동완료 · "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    ld.style.display="none";main.style.display="block";
+    buildChips();renderAll();
+  }catch(e){
+    dot.className="live-dot error";DATA=[];
+    ld.style.display="none";main.style.display="block";
+    err.style.display="block";
+    err.innerHTML=`⚠️ 로드 실패: ${e.message}<br><span style="font-size:11px">→ Apps Script 배포: 액세스 <b>모든 사용자(익명 포함)</b></span>`;
+    buildChips();renderAll();
+  }finally{btn.disabled=false;}
+}
+
+// ── 필터 ──
+const isAll=()=>sel.has("all");
+const getD=()=>{const b=DATA.filter(d=>d.평가금액!==0||d.매입금액!==0);return isAll()?b:b.filter(d=>sel.has(d.계좌));};
+
+function buildChips(){
+  const accts=[...new Set(DATA.map(d=>d.계좌))];
+  const w=document.getElementById("chips");w.innerHTML="";
+  const mk=(l,k)=>{const c=document.createElement("div");c.className="chip"+((k==="all"?isAll():!isAll()&&sel.has(k))?" on":"");c.textContent=l;c.onclick=()=>handleChip(k,accts);w.appendChild(c);};
+  mk("전체","all");accts.forEach(a=>mk(a,a));
+}
+function handleChip(k,accts){
+  if(k==="all"){sel=new Set(["all"]);}
+  else{sel.delete("all");if(sel.has(k)){sel.delete(k);if(!sel.size)sel=new Set(["all"]);}else{sel.add(k);if(accts.every(a=>sel.has(a)))sel=new Set(["all"]);}}
+  buildChips();renderAll();
+}
+
+// ── 탭 ──
+function switchTab(el){
+  tab=el.dataset.tab;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));el.classList.add("on");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.getElementById("p-"+tab).classList.add("on");
+  renderAll();
+}
+
+// ── 렌더 ──
+function renderAll(){const d=getD();renderCards(d);if(tab==="overview"){renderPie(d);renderBar(d);}if(tab==="asset"){renderAsset(d);}if(tab==="table"){renderTable(d);}}
+
+function renderCards(d){
+  const ev=d.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
+  const co=d.filter(x=>x.매입금액>0).reduce((s,x)=>s+x.매입금액,0);
+  const tp=ev-co,tr=co>0?(tp/co)*100:0;
+  document.getElementById("m-eval").textContent=fmt(ev);
+  document.getElementById("m-eval-sub").textContent=d.filter(x=>x.평가금액>0&&!isCash(x.상품명)).length+"개 종목";
+  document.getElementById("m-cost").textContent=fmt(co);
+  const pe=document.getElementById("m-pnl");pe.textContent=(tp>=0?"+":"")+fmt(tp);pe.className="mcard-val "+(tp>=0?"pos":"neg");
+  const re=document.getElementById("m-rate");re.textContent=fmtR(tr);re.className="mcard-val "+(tr>=0?"pos":"neg");
+}
+
+function renderPie(d){
+  const v=d.filter(x=>x.평가금액>0&&!isCash(x.상품명)).sort((a,b)=>b.평가금액-a.평가금액);
+  const te=v.reduce((s,x)=>s+x.평가금액,0);
+  const top=v.slice(0,10),etc=v.slice(10).reduce((s,x)=>s+x.평가금액,0);
+  const lb=top.map(x=>x.상품명.length>12?x.상품명.slice(0,12)+"…":x.상품명);
+  const vl=top.map(x=>x.평가금액);
+  if(etc>0){lb.push("기타");vl.push(etc);}
+  dc("pie");
+  CH.pie=new Chart(document.getElementById("c-pie"),{type:"doughnut",data:{labels:lb,datasets:[{data:vl,backgroundColor:PAL,borderColor:"transparent",borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${((c.raw/te)*100).toFixed(1)}%`}}}}});
+  document.getElementById("leg-pie").innerHTML=lb.map((l,i)=>`<span class="li"><span class="ld" style="background:${PAL[i%PAL.length]}"></span>${l} ${((vl[i]/te)*100).toFixed(1)}%</span>`).join("");
+}
+
+function renderBar(d){
+  const v=d.filter(x=>x.매입금액>0&&!isCash(x.상품명)).sort((a,b)=>b.손익률-a.손익률);
+  document.getElementById("wr-bar").style.height=Math.max(200,v.length*22+50)+"px";
+  dc("bar");
+  CH.bar=new Chart(document.getElementById("c-bar"),{type:"bar",
+    data:{labels:v.map(x=>x.상품명.length>10?x.상품명.slice(0,10)+"…":x.상품명),datasets:[{data:v.map(x=>x.손익률),backgroundColor:v.map(x=>x.손익률>=0?"#3ecf8e":"#ff6b6b"),borderRadius:3,barThickness:11}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtR(c.raw)}`}}},
+      scales:{x:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff08"}},y:{ticks:{color:"#9090a8",font:{size:9}},grid:{display:false}}}}});
+}
+
+function renderAsset(d){
+  const nc=d.filter(x=>!isCash(x.상품명));
+  const types=[...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
+  const te=nc.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
+
+  document.getElementById("asset-cards").innerHTML=types.map(t=>{
+    const g=nc.filter(x=>x.자산유형===t);
+    const e=g.reduce((s,x)=>s+x.평가금액,0),c=g.reduce((s,x)=>s+x.매입금액,0);
+    const r=c>0?((e-c)/c)*100:0;
+    return`<div class="acard" style="cursor:pointer" onclick="openAssetPopup('${t}')">
+      <div class="acard-lbl">${t} ›</div>
+      <div class="acard-val">${fmtS(e)}</div>
+      <div class="acard-rate ${r>=0?"pos":"neg"}">${fmtR(r)} · ${te>0?((e/te)*100).toFixed(1):0}%</div></div>`;
+  }).join("");
+
+  const p2v=types.map(t=>nc.filter(x=>x.자산유형===t).reduce((s,x)=>s+x.평가금액,0));
+  const p2c=types.map(t=>AC[t]||"#888");
+  dc("pie2");
+  CH.pie2=new Chart(document.getElementById("c-pie2"),{type:"doughnut",data:{labels:types,datasets:[{data:p2v,backgroundColor:p2c,borderColor:"transparent",borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${((c.raw/te)*100).toFixed(1)}%`}}}}});
+  document.getElementById("leg-pie2").innerHTML=types.map((t,i)=>`<span class="li"><span class="ld" style="background:${p2c[i]}"></span>${t} ${((p2v[i]/te)*100).toFixed(1)}%</span>`).join("");
+
+  const b2=types.map(t=>{const g=nc.filter(x=>x.자산유형===t);const e=g.reduce((s,x)=>s+x.평가금액,0),c=g.reduce((s,x)=>s+x.매입금액,0);return{t,r:c>0?((e-c)/c)*100:0};}).sort((a,b)=>b.r-a.r);
+  document.getElementById("wr-bar2").style.height=Math.max(180,b2.length*40+50)+"px";
+  dc("bar2");
+  CH.bar2=new Chart(document.getElementById("c-bar2"),{type:"bar",data:{labels:b2.map(x=>x.t),datasets:[{data:b2.map(x=>x.r),backgroundColor:b2.map(x=>x.r>=0?"#3ecf8e":"#ff6b6b"),borderRadius:4,barThickness:20}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtR(c.raw)}`}}},
+      scales:{x:{ticks:{color:"#55556a",font:{size:10},callback:v=>v+"%"},grid:{color:"#ffffff08"}},y:{ticks:{color:"#9090a8",font:{size:11}},grid:{display:false}}}}});
+
+  document.getElementById("drill").innerHTML=types.map(t=>{
+    const g=nc.filter(x=>x.자산유형===t&&x.평가금액>0);
+    const subs=[...new Set(g.map(x=>x.세부분류).filter(Boolean))];
+    const sd=subs.map(s=>{const sg=g.filter(x=>x.세부분류===s);const e=sg.reduce((a,x)=>a+x.평가금액,0),c=sg.reduce((a,x)=>a+x.매입금액,0);return{s,e,r:c>0?((e-c)/c)*100:0};}).sort((a,b)=>b.e-a.e);
+    const mx=sd[0]?.e||1,col=AC[t]||"#888";
+    return`<div class="drill-sec">
+      <div class="drill-hdr"><span style="color:${col}">${t.toUpperCase()}</span><span style="color:var(--text3)">${subs.length}개 · 탭하면 구성종목 보기</span></div>
+      <div class="drill-bg">${sd.map(({s,e,r})=>`
+        <div class="drill-row" onclick="openSubPopup('${t}','${s}')">
+          <div class="dn">${s}</div>
+          <div class="dtrack"><div class="dfill" style="width:${Math.round(e/mx*100)}%;background:${col}"></div></div>
+          <div class="damt">${fmtS(e)}</div>
+          <div class="drate ${r>=0?"pos":"neg"}">${fmtR(r)}</div>
+          <div class="drill-row-hint">›</div>
+        </div>`).join("")}</div></div>`;
+  }).join("");
+}
+
+function renderTable(d){
+  document.getElementById("tbody").innerHTML=[...d].sort((a,b)=>(a.자산유형||"").localeCompare(b.자산유형||"")).map(x=>{
+    const cls=x.평가손익>=0?"pos":"neg";
+    return`<tr><td><span class="tag t-${x.계좌}">${x.계좌}</span></td><td>${x.상품명}</td>
+      <td><span class="tag t-${x.자산유형||'현금'}">${x.자산유형||"—"}</span></td>
+      <td>${qF(x.보유수량)}</td><td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR"):"—"}</td>
+      <td>${fmt(x.매입금액)}</td><td>${x.평가금액>0?fmt(x.평가금액):"—"}</td>
+      <td class="${cls}">${fmtR(x.손익률)}</td></tr>`;
+  }).join("");
+}
+
+// ── 팝업 열기: 자산유형 전체 클릭 ──
+function openAssetPopup(assetType){
+  const d = getD().filter(x=>x.자산유형===assetType&&!isCash(x.상품명)&&x.평가금액>0);
+  const te = d.reduce((s,x)=>s+x.평가금액,0);
+  const tc = d.reduce((s,x)=>s+x.매입금액,0);
+  const tp = te-tc, tr = tc>0?(tp/tc)*100:0;
+  const col = AC[assetType]||"#888";
+
+  document.getElementById("popDot").style.background = col;
+  document.getElementById("popTitle").textContent = assetType;
+  document.getElementById("popSub").textContent = d.length+"개 종목";
+  document.getElementById("popSummary").innerHTML = `
+    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
+
+  const sorted = [...d].sort((a,b)=>b.평가금액-a.평가금액);
+  document.getElementById("popBody").innerHTML = `
+    <div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>
+    ${sorted.map((x,i)=>{
+      const pct = te>0?((x.평가금액/te)*100):0;
+      return`<div class="pop-item">
+        <div class="pop-rank">${i+1}</div>
+        <div class="pop-info">
+          <div class="pop-nm">${x.상품명}</div>
+          <div class="pop-acct">${x.계좌} · ${x.세부분류||"—"}</div>
+        </div>
+        <div class="pop-bar-wrap">
+          <div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
+          <div class="pop-pct">${pct.toFixed(1)}%</div>
+        </div>
+        <div class="pop-right">
+          <div class="pop-eval">${fmtS(x.평가금액)}</div>
+          <div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div>
+        </div>
+      </div>`;
+    }).join("")}`;
+
   const pop = document.getElementById("popOverlay");
   pop.classList.add("open");
+  
   // 아이폰에서 배경 스크롤 방지
   document.documentElement.style.overflow = "hidden"; 
   document.body.style.overflow = "hidden";
 }
 
-// 팝업 닫기 함수 수정
+// ── 팝업 열기: 세부분류 클릭 ──
+function openSubPopup(assetType, subType){
+  const d = getD().filter(x=>x.자산유형===assetType&&x.세부분류===subType&&!isCash(x.상품명)&&x.평가금액>0);
+  const te = d.reduce((s,x)=>s+x.평가금액,0);
+  const tc = d.reduce((s,x)=>s+x.매입금액,0);
+  const tp = te-tc, tr = tc>0?(tp/tc)*100:0;
+  const col = AC[assetType]||"#888";
+
+  document.getElementById("popDot").style.background = col;
+  document.getElementById("popTitle").textContent = subType;
+  document.getElementById("popSub").textContent = assetType+" · "+d.length+"개 종목";
+  document.getElementById("popSummary").innerHTML = `
+    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
+
+  const sorted=[...d].sort((a,b)=>b.평가금액-a.평가금액);
+  document.getElementById("popBody").innerHTML=`
+    <div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>
+    ${sorted.map((x,i)=>{
+      const pct=te>0?((x.평가금액/te)*100):0;
+      return`<div class="pop-item">
+        <div class="pop-rank">${i+1}</div>
+        <div class="pop-info">
+          <div class="pop-nm">${x.상품명}</div>
+          <div class="pop-acct">${x.계좌} · ${x.현재가?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</div>
+        </div>
+        <div class="pop-bar-wrap">
+          <div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
+          <div class="pop-pct">${pct.toFixed(1)}%</div>
+        </div>
+        <div class="pop-right">
+          <div class="pop-eval">${fmtS(x.평가금액)}</div>
+          <div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div>
+        </div>
+      </div>`;
+    }).join("")}`;
+
+  const pop = document.getElementById("popOverlay");
+  pop.classList.add("open");
+  
+  // 아이폰에서 배경 스크롤 방지
+  document.documentElement.style.overflow = "hidden"; 
+  document.body.style.overflow = "hidden";
+}
+
+// ── 팝업 닫기 함수 수정 ──
 function closePopup(e) {
   // 배경을 누르거나 X를 눌렀을 때만 닫기
   if (e && e.target !== document.getElementById("popOverlay") && e.target !== document.querySelector(".popup-close")) return;
@@ -19,17 +530,24 @@ function closePopup(e) {
   document.body.style.overflow = "";
 }
 
-// 스와이프 감도 조절 (아이폰 최적화)
+// ── 스와이프 감도 조절 (아이폰 최적화) ──
 let touchStartY = 0;
 const sheet = document.getElementById("popSheet");
-sheet.addEventListener("touchstart", e => {
-  touchStartY = e.touches[0].clientY;
-}, { passive: true });
+if(sheet) {
+  sheet.addEventListener("touchstart", e => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
 
-sheet.addEventListener("touchend", e => {
-  const touchEndY = e.changedTouches[0].clientY;
-  // 아래로 100px 이상 빠르게 쓸어내릴 때만 닫기
-  if (touchEndY - touchStartY > 100) {
-    closePopup();
-  }
-}, { passive: true });
+  sheet.addEventListener("touchend", e => {
+    const touchEndY = e.changedTouches[0].clientY;
+    // 아래로 100px 이상 빠르게 쓸어내릴 때만 닫기
+    if (touchEndY - touchStartY > 100) {
+      closePopup();
+    }
+  }, { passive: true });
+}
+
+loadData();
+</script>
+</body>
+</html>
