@@ -268,6 +268,9 @@ tr:hover td{background:var(--bg3)}
       <div class="submit-msg" id="submitMsg"></div>
       <input type="hidden" id="f-orig-acct">
       <input type="hidden" id="f-orig-name">
+
+      <!-- RAW 시트 입력 영역 -->
+      <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">📄 RAW 시트 — 계좌 · 상품명 · 수량 · 매입금액</div>
       <div class="form-row">
         <label class="form-label">계좌 *</label>
         <select class="form-select" id="f-acct">
@@ -282,6 +285,19 @@ tr:hover td{background:var(--bg3)}
       </div>
       <div class="form-grid">
         <div class="form-row">
+          <label class="form-label">보유수량</label>
+          <input class="form-input" id="f-qty" type="number" placeholder="0" step="any" min="0">
+        </div>
+        <div class="form-row">
+          <label class="form-label">매입금액 (원)</label>
+          <input class="form-input" id="f-cost" type="number" placeholder="0">
+        </div>
+      </div>
+
+      <!-- 자산분류 시트 입력 영역 -->
+      <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">🗂 자산분류 시트 — 자산유형 · 세부분류</div>
+      <div class="form-grid">
+        <div class="form-row">
           <label class="form-label">자산유형 *</label>
           <select class="form-select" id="f-type">
             <option value="">선택하세요</option>
@@ -291,37 +307,13 @@ tr:hover td{background:var(--bg3)}
         </div>
         <div class="form-row">
           <label class="form-label">세부분류</label>
-          <input class="form-input" id="f-sub" type="text" placeholder="예: 국내배당">
+          <input class="form-input" id="f-sub" type="text" placeholder="예: 국내ETF">
         </div>
       </div>
-      <div class="form-grid">
-        <div class="form-row">
-          <label class="form-label">보유수량</label>
-          <input class="form-input" id="f-qty" type="number" placeholder="0" step="any" min="0" oninput="autoCalc()">
-        </div>
-        <div class="form-row">
-          <label class="form-label">현재가 (원)</label>
-          <input class="form-input" id="f-price" type="number" placeholder="0" min="0" oninput="autoCalc()">
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-row">
-          <label class="form-label">평균매입가 (원)</label>
-          <input class="form-input" id="f-avg" type="number" placeholder="0" min="0" oninput="autoCalc()">
-        </div>
-        <div class="form-row">
-          <label class="form-label">매입금액 (원)</label>
-          <input class="form-input" id="f-cost" type="number" placeholder="자동계산">
-        </div>
-      </div>
-      <div class="form-row">
-        <label class="form-label">평가금액 (원)</label>
-        <input class="form-input" id="f-eval" type="number" placeholder="자동계산">
-      </div>
+
       <div class="hint-box">
-        💡 수량·현재가·평균매입가 입력 시 매입/평가금액 자동계산<br>
-        ✏️ 수정 시 RAW·자산분류·티커 시트가 동시에 업데이트됩니다<br>
-        🔒 수정 모드에서 계좌·종목명은 식별키라 변경 불가
+        🔒 수정 모드에서 계좌·종목명은 식별키라 변경 불가<br>
+        📊 현재가·평균매입가·평가금액은 미래에셋DB 수식으로 자동계산
       </div>
     </div>
     <div class="modal-foot">
@@ -532,14 +524,6 @@ function openModalByIdx(i){
   openModal("edit", _tableRows[i]);
 }
 
-function autoCalc(){
-  const qty=parseFloat(document.getElementById("f-qty").value)||0;
-  const price=parseFloat(document.getElementById("f-price").value)||0;
-  const avg=parseFloat(document.getElementById("f-avg").value)||0;
-  if(qty>0&&avg>0)document.getElementById("f-cost").value=Math.round(qty*avg);
-  if(qty>0&&price>0)document.getElementById("f-eval").value=Math.round(qty*price);
-}
-
 function openModal(mode,item){
   modalMode=mode;
   const msg=document.getElementById("submitMsg");
@@ -551,38 +535,39 @@ function openModal(mode,item){
     document.getElementById("modalTitle").textContent="종목 추가";
     badge.textContent="NEW";badge.className="mode-badge badge-add";
     submitBtn.textContent="구글 시트에 저장";
-    ["f-sub","f-qty","f-price","f-avg","f-cost","f-eval"].forEach(id=>document.getElementById(id).value="");
     document.getElementById("f-acct").value="";
-    document.getElementById("f-type").value="";
+    document.getElementById("f-acct").disabled=false;
     document.getElementById("f-name").value="";
     document.getElementById("f-name").disabled=false;
-    document.getElementById("f-acct").disabled=false;
+    document.getElementById("f-qty").value="";
+    document.getElementById("f-cost").value="";
+    document.getElementById("f-type").value="";
+    document.getElementById("f-sub").value="";
     document.getElementById("f-orig-acct").value="";
     document.getElementById("f-orig-name").value="";
   }else{
     document.getElementById("modalTitle").textContent="종목 수정";
     badge.textContent="EDIT";badge.className="mode-badge badge-edit";
     submitBtn.textContent="수정 저장";
+    // 식별키 (읽기전용)
     document.getElementById("f-orig-acct").value=item.계좌;
     document.getElementById("f-orig-name").value=item.상품명;
     document.getElementById("f-acct").value=item.계좌;
     document.getElementById("f-acct").disabled=true;
     document.getElementById("f-name").value=item.상품명;
     document.getElementById("f-name").disabled=true;
+    // RAW 시트 필드
+    document.getElementById("f-qty").value=item.보유수량??"";
+    document.getElementById("f-cost").value=item.매입금액||"";
+    // 자산분류 시트 필드
     document.getElementById("f-type").value=item.자산유형||"";
     document.getElementById("f-sub").value=item.세부분류||"";
-    document.getElementById("f-qty").value=item.보유수량??"";
-    document.getElementById("f-price").value=item.현재가??"";
-    document.getElementById("f-avg").value=item.평균매입가??"";
-    document.getElementById("f-cost").value=item.매입금액||"";
-    document.getElementById("f-eval").value=item.평가금액||"";
   }
   document.getElementById("itemModal").classList.add("open");lock();
 }
 
 function closeModal(){
   document.getElementById("itemModal").classList.remove("open");unlock();
-  // 비활성화 해제
   document.getElementById("f-name").disabled=false;
   document.getElementById("f-acct").disabled=false;
 }
@@ -590,52 +575,60 @@ function closeModal(){
 async function submitForm(){
   const msg=document.getElementById("submitMsg");
   const btn=document.getElementById("submitBtn");
-  const acct=modalMode==="edit"?document.getElementById("f-orig-acct").value:document.getElementById("f-acct").value.trim();
-  const name=modalMode==="edit"?document.getElementById("f-orig-name").value:document.getElementById("f-name").value.trim();
-  const type=document.getElementById("f-type").value.trim();
-  const sub=document.getElementById("f-sub").value.trim();
-  const qtyN=parseFloat(document.getElementById("f-qty").value)||0;
-  const prN=parseFloat(document.getElementById("f-price").value)||0;
-  const avgN=parseFloat(document.getElementById("f-avg").value)||0;
-  const costN=parseFloat(document.getElementById("f-cost").value)||(qtyN*avgN)||0;
-  const evalN=parseFloat(document.getElementById("f-eval").value)||(qtyN*prN)||0;
 
-  if(!acct||!name||!type){msg.className="submit-msg fail";msg.textContent="⚠️ 계좌, 종목명, 자산유형은 필수입니다.";return;}
+  // 식별키: edit 모드는 hidden 값 사용 (disabled 필드는 .value가 빈 문자열로 읽힐 수 있음)
+  const acct = modalMode==="edit"
+    ? document.getElementById("f-orig-acct").value
+    : document.getElementById("f-acct").value.trim();
+  const name = modalMode==="edit"
+    ? document.getElementById("f-orig-name").value
+    : document.getElementById("f-name").value.trim();
+
+  // RAW 시트 값
+  const qtyN  = document.getElementById("f-qty").value.trim();
+  const costN = document.getElementById("f-cost").value.trim();
+  // 자산분류 시트 값
+  const type  = document.getElementById("f-type").value.trim();
+  const sub   = document.getElementById("f-sub").value.trim();
+
+  if(!acct||!name||!type){
+    msg.className="submit-msg fail";
+    msg.textContent="⚠️ 계좌, 종목명, 자산유형은 필수입니다.";
+    return;
+  }
   btn.disabled=true;btn.textContent="저장 중...";
   msg.className="submit-msg";msg.textContent="";
 
-  const pnl=evalN-costN,rate=costN>0?(pnl/costN)*100:0;
+  // RAW + 자산분류만 전송 (나머지는 미래에셋DB 수식이 자동계산)
   const payload={
-    action:modalMode==="add"?"addRow":"updateRow",
-    계좌:acct,상품명:name,자산유형:type,세부분류:sub,
-    보유수량:qtyN,현재가:prN,평균매입가:avgN,
-    매입금액:costN,평가금액:evalN,평가손익:pnl,손익률:rate
+    action : modalMode==="add" ? "addRow" : "updateRow",
+    계좌    : acct,
+    상품명  : name,
+    보유수량: qtyN,
+    매입금액: costN,
+    자산유형: type,
+    세부분류: sub
   };
 
   try{
-    // ✅ Bug 1,2 수정: POST+JSON 대신 GET 쿼리스트링 방식 사용 (CORS 우회)
-    // Apps Script는 브라우저 POST+JSON에서 CORS preflight로 100% 차단됨
     const params = new URLSearchParams();
     Object.entries(payload).forEach(([k,v]) => params.append(k, v ?? ""));
     const res = await fetch(API + "?" + params.toString(), {
-      method: "GET",
-      redirect: "follow"
+      method:"GET", redirect:"follow"
     });
     const text = await res.text();
-    let json = {};
-    try { json = JSON.parse(text); } catch(_) {}
-    // ✅ Bug 5 수정: res.ok만으론 부족 — Apps Script는 오류도 HTTP 200 반환함
-    // result === "success" 명시 확인 필수
-    if(json.result === "success"){
+    let json={};
+    try{ json=JSON.parse(text); }catch(_){}
+    if(json.result==="success"){
       msg.className="submit-msg ok";
       msg.textContent=modalMode==="add"?"✅ 구글 시트에 추가되었습니다!":"✅ 구글 시트가 수정되었습니다!";
       setTimeout(()=>{closeModal();loadData();},2000);
     }else{
-      throw new Error(json.error || json.message || "서버 응답: " + text.slice(0,80));
+      throw new Error(json.error||json.message||"서버 응답: "+text.slice(0,120));
     }
   }catch(e){
     msg.className="submit-msg fail";
-    msg.innerHTML=`⚠️ 실패: ${e.message}<br><small>Apps Script doGet에서 action 파라미터를 처리하는지 확인하세요</small>`;
+    msg.innerHTML=`⚠️ 실패: ${e.message}<br><small>Apps Script를 새 버전으로 재배포했는지 확인하세요</small>`;
   }finally{
     btn.disabled=false;
     btn.textContent=modalMode==="add"?"구글 시트에 저장":"수정 저장";
