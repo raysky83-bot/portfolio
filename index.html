@@ -64,7 +64,6 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .dfill{height:100%;border-radius:2px}
 .damt{width:70px;text-align:right;color:var(--text);font-weight:500;flex-shrink:0;font-size:10px;font-family:'DM Mono',monospace}
 .drate{width:52px;text-align:right;flex-shrink:0;font-size:10px;font-weight:500;font-family:'DM Mono',monospace}
-/* 테이블 */
 .tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
 .tbl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .tbl-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace}
@@ -95,13 +94,14 @@ tr:hover td{background:var(--bg3)}
 .t-현금{background:#ffffff10;color:#ffffff50;border:1px solid #ffffff15}
 .edit-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:3px 8px;border-radius:5px;font-size:9px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s}
 .edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+.bar-sort-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:3px 9px;border-radius:5px;font-size:9px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;white-space:nowrap}
+.bar-sort-btn:hover{border-color:var(--accent);color:var(--accent)}
 .panel{display:none}.panel.on{display:block}
 @media(min-width:640px){
   .mcard-grid{grid-template-columns:repeat(4,1fr)}
   .chart2{grid-template-columns:1fr 1fr}
   .asset-cards{grid-template-columns:repeat(4,1fr)}
 }
-/* 모달 */
 .modal-overlay{position:fixed;inset:0;z-index:2000;background:#00000099;backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:480px;overflow:hidden;transform:translateY(20px);transition:transform .25s;max-height:90vh;display:flex;flex-direction:column}
@@ -129,7 +129,8 @@ tr:hover td{background:var(--bg3)}
 .mode-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;font-weight:600;margin-left:8px}
 .badge-add{background:#6c6cff18;color:#9090ff;border:1px solid #6c6cff30}
 .badge-edit{background:#f5c84218;color:#f5c842;border:1px solid #f5c84230}
-/* 팝업 */
+.sheet-label{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sheet-label:first-of-type{margin-top:0}
 .popup-overlay{position:fixed;inset:0;z-index:1000;background:#00000088;backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .popup-overlay.open{opacity:1;pointer-events:all}
 .popup-sheet{width:100%;max-width:540px;background:var(--bg2);border-top:1px solid var(--border2);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px);max-height:85vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
@@ -207,7 +208,15 @@ tr:hover td{background:var(--bg3)}
           <div style="position:relative;height:220px"><canvas id="c-pie"></canvas></div>
           <div class="legend" id="leg-pie"></div>
         </div>
-        <div class="ccard"><div class="ccard-ttl">종목별 수익률</div>
+        <div class="ccard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="ccard-ttl" style="margin-bottom:0">종목별 수익률</div>
+            <div style="display:flex;gap:6px">
+              <button id="bar-sort-name"  data-col="종목명"  data-label="종목명"  onclick="barSort('종목명')"  class="bar-sort-btn">종목명</button>
+              <button id="bar-sort-eval"  data-col="평가금액" data-label="평가금액" onclick="barSort('평가금액')" class="bar-sort-btn">평가금액</button>
+              <button id="bar-sort-rate"  data-col="손익률"  data-label="손익률 ↓" onclick="barSort('손익률')"  class="bar-sort-btn" style="color:var(--accent)">손익률 ↓</button>
+            </div>
+          </div>
           <div style="position:relative" id="wr-bar"><canvas id="c-bar"></canvas></div>
         </div>
       </div>
@@ -269,8 +278,7 @@ tr:hover td{background:var(--bg3)}
       <input type="hidden" id="f-orig-acct">
       <input type="hidden" id="f-orig-name">
 
-      <!-- RAW 시트 입력 영역 -->
-      <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">📄 RAW 시트 — 계좌 · 상품명 · 수량 · 매입금액</div>
+      <div class="sheet-label">📄 RAW 시트 — 계좌 · 상품명 · 수량 · 매입금액</div>
       <div class="form-row">
         <label class="form-label">계좌 *</label>
         <select class="form-select" id="f-acct">
@@ -294,8 +302,7 @@ tr:hover td{background:var(--bg3)}
         </div>
       </div>
 
-      <!-- 자산분류 시트 입력 영역 -->
-      <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">🗂 자산분류 시트 — 자산유형 · 세부분류</div>
+      <div class="sheet-label">🗂 자산분류 시트 — 자산유형 · 세부분류</div>
       <div class="form-grid">
         <div class="form-row">
           <label class="form-label">자산유형 *</label>
@@ -350,6 +357,7 @@ const PAL=["#6c6cff","#3ecf8e","#f5c842","#ff9f43","#ff6b6b","#79c0ff","#56d364"
 
 let DATA=[],sel=new Set(["all"]),tab="overview",CH={};
 let sortCol=null,sortDir=1,modalMode="add";
+let _tableRows=[];
 
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
@@ -440,14 +448,69 @@ function renderPie(d){
     options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${((c.raw/te)*100).toFixed(1)}%`}}}}});
   document.getElementById("leg-pie").innerHTML=lb.map((l,i)=>`<span class="li"><span class="ld" style="background:${PAL[i%PAL.length]}"></span>${l} ${((vl[i]/te)*100).toFixed(1)}%</span>`).join("");
 }
+let barSortCol="손익률", barSortDir=-1; // 기본: 수익률 내림차순
+
 function renderBar(d){
-  const v=d.filter(x=>x.매입금액>0&&!isCash(x.상품명)).sort((a,b)=>b.손익률-a.손익률);
-  document.getElementById("wr-bar").style.height=Math.max(200,v.length*22+50)+"px";
+  const base=d.filter(x=>x.매입금액>0&&!isCash(x.상품명));
+
+  // 정렬
+  const v=[...base].sort((a,b)=>{
+    if(barSortCol==="손익률") return (a.손익률-b.손익률)*barSortDir;
+    if(barSortCol==="평가금액") return (a.평가금액-b.평가금액)*barSortDir;
+    // 종목명
+    return a.상품명.localeCompare(b.상품명,"ko")*barSortDir;
+  });
+
+  const barH=Math.max(200,v.length*26+80);
+  document.getElementById("wr-bar").style.height=barH+"px";
+
+  // 정렬 버튼 상태 반영
+  ["bar-sort-name","bar-sort-eval","bar-sort-rate"].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const col=el.dataset.col;
+    el.style.color=barSortCol===col?"var(--accent)":"var(--text3)";
+    el.textContent=el.dataset.label+(barSortCol===col?(barSortDir===1?" ↑":" ↓"):"");
+  });
+
   dc("bar");
   CH.bar=new Chart(document.getElementById("c-bar"),{type:"bar",
-    data:{labels:v.map(x=>x.상품명.length>10?x.상품명.slice(0,10)+"…":x.상품명),datasets:[{data:v.map(x=>x.손익률),backgroundColor:v.map(x=>x.손익률>=0?"#3ecf8e":"#ff6b6b"),borderRadius:3,barThickness:11}]},
-    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtR(c.raw)}`}}},
-      scales:{x:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff08"}},y:{ticks:{color:"#9090a8",font:{size:9}},grid:{display:false}}}}});
+    data:{
+      labels:v.map(x=>x.상품명.length>10?x.상품명.slice(0,10)+"…":x.상품명),
+      datasets:[{
+        data:v.map(x=>x.손익률),
+        backgroundColor:v.map(x=>x.손익률>=0?"#3ecf8e":"#ff6b6b"),
+        borderRadius:3,barThickness:13
+      }]
+    },
+    options:{
+      indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          label:c=>{
+            const item=v[c.dataIndex];
+            const evalM=(item.평가금액/1000000).toFixed(1);
+            return ` ${fmtR(c.raw)}  |  ${evalM}백만`;
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff08"}},
+        y:{
+          ticks:{
+            color:"#9090a8",font:{size:9},
+            callback:(val,idx)=>{
+              const item=v[idx];
+              const nm=item.상품명.length>9?item.상품명.slice(0,9)+"…":item.상품명;
+              const evalM=(item.평가금액/1000000).toFixed(1);
+              return `${nm}  ${evalM}M`;
+            }
+          },
+          grid:{display:false}
+        }
+      }
+    }
+  });
 }
 function renderAsset(d){
   const nc=d.filter(x=>!isCash(x.상품명));
@@ -487,9 +550,6 @@ function sortBy(th){
   renderTable(getD());
 }
 
-// 현재 렌더된 행 데이터를 인덱스로 참조 (특수문자 안전하게 처리 — Bug 3 수정)
-let _tableRows = [];
-
 function renderTable(d){
   let rows=[...d];
   if(sortCol){
@@ -500,9 +560,7 @@ function renderTable(d){
       return(av||"").localeCompare(bv||"","ko")*sortDir;
     });
   }else{rows.sort((a,b)=>(a.자산유형||"").localeCompare(b.자산유형||"","ko"));}
-
-  _tableRows = rows; // 인덱스 참조용 저장
-
+  _tableRows=rows;
   document.getElementById("tbody").innerHTML=rows.map((x,i)=>{
     const cls=x.평가손익>=0?"pos":"neg";
     return`<tr>
@@ -519,9 +577,12 @@ function renderTable(d){
   }).join("");
 }
 
-// Bug 3 수정: 인덱스로 안전하게 데이터 참조
-function openModalByIdx(i){
-  openModal("edit", _tableRows[i]);
+function openModalByIdx(i){ openModal("edit",_tableRows[i]); }
+
+function barSort(col){
+  if(barSortCol===col){ barSortDir*=-1; }
+  else{ barSortCol=col; barSortDir=col==="종목명"?1:-1; }
+  renderBar(getD());
 }
 
 function openModal(mode,item){
@@ -530,36 +591,25 @@ function openModal(mode,item){
   msg.className="submit-msg";msg.textContent="";
   const badge=document.getElementById("modeBadge");
   const submitBtn=document.getElementById("submitBtn");
-
   if(mode==="add"){
     document.getElementById("modalTitle").textContent="종목 추가";
     badge.textContent="NEW";badge.className="mode-badge badge-add";
     submitBtn.textContent="구글 시트에 저장";
-    document.getElementById("f-acct").value="";
-    document.getElementById("f-acct").disabled=false;
-    document.getElementById("f-name").value="";
-    document.getElementById("f-name").disabled=false;
-    document.getElementById("f-qty").value="";
-    document.getElementById("f-cost").value="";
-    document.getElementById("f-type").value="";
-    document.getElementById("f-sub").value="";
-    document.getElementById("f-orig-acct").value="";
-    document.getElementById("f-orig-name").value="";
+    document.getElementById("f-acct").value="";document.getElementById("f-acct").disabled=false;
+    document.getElementById("f-name").value="";document.getElementById("f-name").disabled=false;
+    document.getElementById("f-qty").value="";document.getElementById("f-cost").value="";
+    document.getElementById("f-type").value="";document.getElementById("f-sub").value="";
+    document.getElementById("f-orig-acct").value="";document.getElementById("f-orig-name").value="";
   }else{
     document.getElementById("modalTitle").textContent="종목 수정";
     badge.textContent="EDIT";badge.className="mode-badge badge-edit";
     submitBtn.textContent="수정 저장";
-    // 식별키 (읽기전용)
     document.getElementById("f-orig-acct").value=item.계좌;
     document.getElementById("f-orig-name").value=item.상품명;
-    document.getElementById("f-acct").value=item.계좌;
-    document.getElementById("f-acct").disabled=true;
-    document.getElementById("f-name").value=item.상품명;
-    document.getElementById("f-name").disabled=true;
-    // RAW 시트 필드
+    document.getElementById("f-acct").value=item.계좌;document.getElementById("f-acct").disabled=true;
+    document.getElementById("f-name").value=item.상품명;document.getElementById("f-name").disabled=true;
     document.getElementById("f-qty").value=item.보유수량??"";
     document.getElementById("f-cost").value=item.매입금액||"";
-    // 자산분류 시트 필드
     document.getElementById("f-type").value=item.자산유형||"";
     document.getElementById("f-sub").value=item.세부분류||"";
   }
@@ -575,57 +625,27 @@ function closeModal(){
 async function submitForm(){
   const msg=document.getElementById("submitMsg");
   const btn=document.getElementById("submitBtn");
-
-  // 식별키: edit 모드는 hidden 값 사용 (disabled 필드는 .value가 빈 문자열로 읽힐 수 있음)
-  const acct = modalMode==="edit"
-    ? document.getElementById("f-orig-acct").value
-    : document.getElementById("f-acct").value.trim();
-  const name = modalMode==="edit"
-    ? document.getElementById("f-orig-name").value
-    : document.getElementById("f-name").value.trim();
-
-  // RAW 시트 값
-  const qtyN  = document.getElementById("f-qty").value.trim();
-  const costN = document.getElementById("f-cost").value.trim();
-  // 자산분류 시트 값
-  const type  = document.getElementById("f-type").value.trim();
-  const sub   = document.getElementById("f-sub").value.trim();
-
-  if(!acct||!name||!type){
-    msg.className="submit-msg fail";
-    msg.textContent="⚠️ 계좌, 종목명, 자산유형은 필수입니다.";
-    return;
-  }
+  const acct=modalMode==="edit"?document.getElementById("f-orig-acct").value:document.getElementById("f-acct").value.trim();
+  const name=modalMode==="edit"?document.getElementById("f-orig-name").value:document.getElementById("f-name").value.trim();
+  const qtyN=document.getElementById("f-qty").value.trim();
+  const costN=document.getElementById("f-cost").value.trim();
+  const type=document.getElementById("f-type").value.trim();
+  const sub=document.getElementById("f-sub").value.trim();
+  if(!acct||!name||!type){msg.className="submit-msg fail";msg.textContent="⚠️ 계좌, 종목명, 자산유형은 필수입니다.";return;}
   btn.disabled=true;btn.textContent="저장 중...";
   msg.className="submit-msg";msg.textContent="";
-
-  // RAW + 자산분류만 전송 (나머지는 미래에셋DB 수식이 자동계산)
-  const payload={
-    action : modalMode==="add" ? "addRow" : "updateRow",
-    계좌    : acct,
-    상품명  : name,
-    보유수량: qtyN,
-    매입금액: costN,
-    자산유형: type,
-    세부분류: sub
-  };
-
+  const payload={action:modalMode==="add"?"addRow":"updateRow",계좌:acct,상품명:name,보유수량:qtyN,매입금액:costN,자산유형:type,세부분류:sub};
   try{
-    const params = new URLSearchParams();
-    Object.entries(payload).forEach(([k,v]) => params.append(k, v ?? ""));
-    const res = await fetch(API + "?" + params.toString(), {
-      method:"GET", redirect:"follow"
-    });
-    const text = await res.text();
-    let json={};
-    try{ json=JSON.parse(text); }catch(_){}
+    const params=new URLSearchParams();
+    Object.entries(payload).forEach(([k,v])=>params.append(k,v??""));
+    const res=await fetch(API+"?"+params.toString(),{method:"GET",redirect:"follow"});
+    const text=await res.text();
+    let json={};try{json=JSON.parse(text);}catch(_){}
     if(json.result==="success"){
       msg.className="submit-msg ok";
       msg.textContent=modalMode==="add"?"✅ 구글 시트에 추가되었습니다!":"✅ 구글 시트가 수정되었습니다!";
       setTimeout(()=>{closeModal();loadData();},2000);
-    }else{
-      throw new Error(json.error||json.message||"서버 응답: "+text.slice(0,120));
-    }
+    }else{throw new Error(json.error||json.message||"서버 응답: "+text.slice(0,120));}
   }catch(e){
     msg.className="submit-msg fail";
     msg.innerHTML=`⚠️ 실패: ${e.message}<br><small>Apps Script를 새 버전으로 재배포했는지 확인하세요</small>`;
