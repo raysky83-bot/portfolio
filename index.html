@@ -32,7 +32,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;user-select:none;font-weight:500}
 .chip.on{border-color:var(--accent);background:#6c6cff18;color:var(--accent)}
-.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:fit-content}
+.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:fit-content;flex-wrap:wrap}
 .tab{padding:6px 16px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;font-weight:500}
 .tab.on{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px #0004}
 .mcard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
@@ -97,11 +97,33 @@ tr:hover td{background:var(--bg3)}
 .bar-sort-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:3px 9px;border-radius:5px;font-size:9px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;white-space:nowrap}
 .bar-sort-btn:hover{border-color:var(--accent);color:var(--accent)}
 .panel{display:none}.panel.on{display:block}
+
+/* 목표비중 */
+.alloc-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.alloc-row:last-child{margin-bottom:0}
+.alloc-type{width:52px;font-size:11px;font-weight:600;flex-shrink:0;font-family:'DM Mono',monospace}
+.alloc-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+.alloc-label{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+.alloc-track{height:6px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible}
+.alloc-actual{height:100%;border-radius:3px;transition:width .5s}
+.alloc-target-line{position:absolute;top:-3px;width:2px;height:12px;border-radius:1px;background:#ffffff60}
+.alloc-gap{font-size:10px;font-weight:600;font-family:'DM Mono',monospace;flex-shrink:0;width:44px;text-align:right}
+.alloc-input{width:48px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);padding:3px 6px;font-size:10px;font-family:'DM Mono',monospace;outline:none;text-align:center}
+.alloc-input:focus{border-color:var(--accent)}
+.alloc-hint{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:10px;line-height:1.6;padding:8px 10px;background:var(--bg3);border-radius:7px}
+
+/* 히스토리 */
+.hist-ctrl{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.hist-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace}
+.hist-btn.on{border-color:var(--accent);background:#6c6cff18;color:var(--accent)}
+.hist-empty{font-size:12px;color:var(--text3);text-align:center;padding:40px 0;font-family:'DM Mono',monospace;line-height:2}
+
 @media(min-width:640px){
   .mcard-grid{grid-template-columns:repeat(4,1fr)}
   .chart2{grid-template-columns:1fr 1fr}
   .asset-cards{grid-template-columns:repeat(4,1fr)}
 }
+/* 모달 */
 .modal-overlay{position:fixed;inset:0;z-index:2000;background:#00000099;backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:480px;overflow:hidden;transform:translateY(20px);transition:transform .25s;max-height:90vh;display:flex;flex-direction:column}
@@ -131,6 +153,7 @@ tr:hover td{background:var(--bg3)}
 .badge-edit{background:#f5c84218;color:#f5c842;border:1px solid #f5c84230}
 .sheet-label{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .sheet-label:first-of-type{margin-top:0}
+/* 팝업 */
 .popup-overlay{position:fixed;inset:0;z-index:1000;background:#00000088;backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .popup-overlay.open{opacity:1;pointer-events:all}
 .popup-sheet{width:100%;max-width:540px;background:var(--bg2);border-top:1px solid var(--border2);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px);max-height:85vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
@@ -192,10 +215,13 @@ tr:hover td{background:var(--bg3)}
     </div>
     <div class="tabs">
       <div class="tab on" data-tab="overview" onclick="switchTab(this)">전체현황</div>
+      <div class="tab" data-tab="history" onclick="switchTab(this)">📈 자산추이</div>
+      <div class="tab" data-tab="alloc" onclick="switchTab(this)">🎯 목표비중</div>
       <div class="tab" data-tab="asset" onclick="switchTab(this)">자산유형</div>
       <div class="tab" data-tab="table" onclick="switchTab(this)">종목테이블</div>
     </div>
 
+    <!-- 전체현황 -->
     <div id="p-overview" class="panel on">
       <div class="mcard-grid">
         <div class="mcard"><div class="mcard-lbl">총 평가금액</div><div class="mcard-val neu" id="m-eval">—</div><div class="mcard-sub" id="m-eval-sub"></div></div>
@@ -214,7 +240,7 @@ tr:hover td{background:var(--bg3)}
             <div style="display:flex;gap:6px">
               <button id="bar-sort-name"  data-col="종목명"  data-label="종목명"  onclick="barSort('종목명')"  class="bar-sort-btn">종목명</button>
               <button id="bar-sort-eval"  data-col="평가금액" data-label="평가금액" onclick="barSort('평가금액')" class="bar-sort-btn">평가금액</button>
-              <button id="bar-sort-rate"  data-col="손익률"  data-label="손익률 ↓" onclick="barSort('손익률')"  class="bar-sort-btn" style="color:var(--accent)">손익률 ↓</button>
+              <button id="bar-sort-rate"  data-col="손익률"  data-label="손익률"   onclick="barSort('손익률')"  class="bar-sort-btn" style="color:var(--accent)">손익률 ↓</button>
             </div>
           </div>
           <div style="position:relative" id="wr-bar"><canvas id="c-bar"></canvas></div>
@@ -222,6 +248,54 @@ tr:hover td{background:var(--bg3)}
       </div>
     </div>
 
+    <!-- 자산 추이 -->
+    <div id="p-history" class="panel">
+      <div class="ccard" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="ccard-ttl" style="margin-bottom:0">자산 성장 추이</div>
+          <div class="hist-ctrl" style="margin-bottom:0">
+            <button class="hist-btn" onclick="histRange(30,this)">1M</button>
+            <button class="hist-btn" onclick="histRange(90,this)">3M</button>
+            <button class="hist-btn on" onclick="histRange(180,this)">6M</button>
+            <button class="hist-btn" onclick="histRange(365,this)">1Y</button>
+            <button class="hist-btn" onclick="histRange(0,this)">전체</button>
+          </div>
+        </div>
+        <div id="hist-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+        <div style="position:relative;height:260px"><canvas id="c-hist"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-ttl">수익률 추이</div>
+        <div style="position:relative;height:180px"><canvas id="c-hist-rate"></canvas></div>
+      </div>
+      <div id="hist-empty" class="hist-empty" style="display:none">
+        📭 히스토리 데이터가 없습니다<br>
+        구글 시트에 <b>히스토리</b> 시트를 추가하고<br>
+        Apps Script에서 매일 자동 기록하도록 설정하세요
+      </div>
+    </div>
+
+    <!-- 목표 비중 -->
+    <div id="p-alloc" class="panel">
+      <div class="ccard" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="ccard-ttl" style="margin-bottom:0">🎯 목표 비중 설정</div>
+          <button onclick="saveAlloc()" style="background:var(--accent);border:none;color:#fff;padding:5px 14px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;font-weight:600">저장</button>
+        </div>
+        <div id="alloc-inputs"></div>
+        <div id="alloc-total-warn" style="font-size:10px;color:var(--neg);font-family:'DM Mono',monospace;margin-top:8px;display:none">⚠️ 목표 합계가 100%가 아닙니다</div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-ttl" style="margin-bottom:14px">현재 vs 목표 비중</div>
+        <div id="alloc-rows"></div>
+        <div class="alloc-hint" id="alloc-hint">
+          💡 막대: 현재 비중 &nbsp;|&nbsp; 세로선: 목표 비중<br>
+          🟢 초과 · 🔴 부족 · 숫자는 갭(현재 - 목표)
+        </div>
+      </div>
+    </div>
+
+    <!-- 자산유형 -->
     <div id="p-asset" class="panel">
       <div class="asset-cards" id="asset-cards"></div>
       <div class="chart2">
@@ -236,6 +310,7 @@ tr:hover td{background:var(--bg3)}
       <div id="drill"></div>
     </div>
 
+    <!-- 종목테이블 -->
     <div id="p-table" class="panel">
       <div class="tbl-wrap">
         <div class="tbl-toolbar">
@@ -277,7 +352,6 @@ tr:hover td{background:var(--bg3)}
       <div class="submit-msg" id="submitMsg"></div>
       <input type="hidden" id="f-orig-acct">
       <input type="hidden" id="f-orig-name">
-
       <div class="sheet-label">📄 RAW 시트 — 계좌 · 상품명 · 수량 · 매입금액</div>
       <div class="form-row">
         <label class="form-label">계좌 *</label>
@@ -301,7 +375,6 @@ tr:hover td{background:var(--bg3)}
           <input class="form-input" id="f-cost" type="number" placeholder="0">
         </div>
       </div>
-
       <div class="sheet-label">🗂 자산분류 시트 — 자산유형 · 세부분류</div>
       <div class="form-grid">
         <div class="form-row">
@@ -317,7 +390,6 @@ tr:hover td{background:var(--bg3)}
           <input class="form-input" id="f-sub" type="text" placeholder="예: 국내ETF">
         </div>
       </div>
-
       <div class="hint-box">
         🔒 수정 모드에서 계좌·종목명은 식별키라 변경 불가<br>
         📊 현재가·평균매입가·평가금액은 미래에셋DB 수식으로 자동계산
@@ -354,10 +426,14 @@ const API="https://script.google.com/macros/s/AKfycbwWi3r9lvpR4Slhbd7czTnFVjNcfk
 const CASH_KW=["예수금","현금성자산","미국달러","달러"];
 const AC={성장주:"#6c6cff",배당주:"#3ecf8e",채권:"#f5c842",금:"#ff9f43",현금:"#55556a"};
 const PAL=["#6c6cff","#3ecf8e","#f5c842","#ff9f43","#ff6b6b","#79c0ff","#56d364","#ffa657","#d2a8ff","#a5d6ff","#7ee787","#e3b341","#ff7b72"];
+const ALLOC_KEY="portfolio_target_alloc";
 
-let DATA=[],sel=new Set(["all"]),tab="overview",CH={};
-let sortCol=null,sortDir=1,modalMode="add";
-let _tableRows=[];
+let DATA=[],HIST=[],sel=new Set(["all"]),tab="overview",CH={};
+let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
+let _tableRows=[],histDays=180;
+
+// 목표비중 로컬 저장
+let TARGET_ALLOC=JSON.parse(localStorage.getItem(ALLOC_KEY)||"{}");
 
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
@@ -369,12 +445,14 @@ const dc=k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
 const lock=()=>{document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";};
 const unlock=()=>{document.documentElement.style.overflow="";document.body.style.overflow="";};
 
+/* ── 데이터 로드 ── */
 async function loadData(){
   const dot=document.getElementById("liveDot"),btn=document.getElementById("syncBtn");
   const err=document.getElementById("errBanner"),ld=document.getElementById("loadingWrap"),main=document.getElementById("mainContent");
-  DATA=[];dot.className="live-dot loading";btn.disabled=true;
+  DATA=[];HIST=[];dot.className="live-dot loading";btn.disabled=true;
   err.style.display="none";ld.style.display="flex";main.style.display="none";
   try{
+    // 메인 데이터
     const res=await fetch(API+"?t="+Date.now(),{method:"GET",redirect:"follow"});
     if(!res.ok)throw new Error("HTTP "+res.status);
     const json=JSON.parse(await res.text());
@@ -391,6 +469,19 @@ async function loadData(){
         매입금액:cost,평가금액:ev,평가손익:toN(r["평가손익"])??0,손익률:toN(r["손익률"])??0};
     });
     if(!DATA.length)throw new Error("유효 데이터 없음");
+
+    // 히스토리 데이터 (실패해도 무시)
+    try{
+      const hres=await fetch(API+"?type=history&t="+Date.now(),{method:"GET",redirect:"follow"});
+      const hjson=JSON.parse(await hres.text());
+      if(Array.isArray(hjson)) HIST=hjson.filter(r=>r["날짜"]&&r["총평가금액"]).map(r=>({
+        날짜:String(r["날짜"]).trim(),
+        총평가금액:toN(r["총평가금액"])??0,
+        총매입금액:toN(r["총매입금액"])??0,
+        수익률:toN(r["수익률"])??0
+      })).sort((a,b)=>a.날짜.localeCompare(b.날짜));
+    }catch(_){}
+
     dot.className="live-dot";
     document.getElementById("hdrSub").textContent="연동완료 · "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
     ld.style.display="none";main.style.display="block";
@@ -425,7 +516,15 @@ function switchTab(el){
   document.getElementById("p-"+tab).classList.add("on");
   renderAll();
 }
-function renderAll(){const d=getD();renderCards(d);if(tab==="overview"){renderPie(d);renderBar(d);}if(tab==="asset"){renderAsset(d);}if(tab==="table"){renderTable(d);}}
+function renderAll(){
+  const d=getD();
+  renderCards(d);
+  if(tab==="overview"){renderPie(d);renderBar(d);}
+  if(tab==="history"){renderHistory();}
+  if(tab==="alloc"){renderAlloc(d);}
+  if(tab==="asset"){renderAsset(d);}
+  if(tab==="table"){renderTable(d);}
+}
 
 function renderCards(d){
   const ev=d.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
@@ -448,70 +547,185 @@ function renderPie(d){
     options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${((c.raw/te)*100).toFixed(1)}%`}}}}});
   document.getElementById("leg-pie").innerHTML=lb.map((l,i)=>`<span class="li"><span class="ld" style="background:${PAL[i%PAL.length]}"></span>${l} ${((vl[i]/te)*100).toFixed(1)}%</span>`).join("");
 }
-let barSortCol="손익률", barSortDir=-1; // 기본: 수익률 내림차순
 
+function barSort(col){
+  if(barSortCol===col){barSortDir*=-1;}
+  else{barSortCol=col;barSortDir=col==="종목명"?1:-1;}
+  renderBar(getD());
+}
 function renderBar(d){
   const base=d.filter(x=>x.매입금액>0&&!isCash(x.상품명));
-
-  // 정렬
   const v=[...base].sort((a,b)=>{
-    if(barSortCol==="손익률") return (a.손익률-b.손익률)*barSortDir;
-    if(barSortCol==="평가금액") return (a.평가금액-b.평가금액)*barSortDir;
-    // 종목명
+    if(barSortCol==="손익률")return(a.손익률-b.손익률)*barSortDir;
+    if(barSortCol==="평가금액")return(a.평가금액-b.평가금액)*barSortDir;
     return a.상품명.localeCompare(b.상품명,"ko")*barSortDir;
   });
-
-  const barH=Math.max(200,v.length*26+80);
-  document.getElementById("wr-bar").style.height=barH+"px";
-
-  // 정렬 버튼 상태 반영
+  document.getElementById("wr-bar").style.height=Math.max(200,v.length*26+80)+"px";
   ["bar-sort-name","bar-sort-eval","bar-sort-rate"].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const col=el.dataset.col;
     el.style.color=barSortCol===col?"var(--accent)":"var(--text3)";
     el.textContent=el.dataset.label+(barSortCol===col?(barSortDir===1?" ↑":" ↓"):"");
   });
-
   dc("bar");
   CH.bar=new Chart(document.getElementById("c-bar"),{type:"bar",
-    data:{
-      labels:v.map(x=>x.상품명.length>10?x.상품명.slice(0,10)+"…":x.상품명),
-      datasets:[{
-        data:v.map(x=>x.손익률),
-        backgroundColor:v.map(x=>x.손익률>=0?"#3ecf8e":"#ff6b6b"),
-        borderRadius:3,barThickness:13
-      }]
-    },
-    options:{
-      indexAxis:"y",responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{
-          label:c=>{
-            const item=v[c.dataIndex];
-            const evalM=(item.평가금액/1000000).toFixed(1);
-            return ` ${fmtR(c.raw)}  |  ${evalM}백만`;
-          }
-        }}
-      },
-      scales:{
-        x:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff08"}},
-        y:{
-          ticks:{
-            color:"#9090a8",font:{size:9},
-            callback:(val,idx)=>{
-              const item=v[idx];
-              const nm=item.상품명.length>9?item.상품명.slice(0,9)+"…":item.상품명;
-              const evalM=(item.평가금액/1000000).toFixed(1);
-              return `${nm}  ${evalM}M`;
-            }
-          },
-          grid:{display:false}
-        }
-      }
-    }
-  });
+    data:{labels:v.map(x=>x.상품명.length>10?x.상품명.slice(0,10)+"…":x.상품명),
+      datasets:[{data:v.map(x=>x.손익률),backgroundColor:v.map(x=>x.손익률>=0?"#3ecf8e":"#ff6b6b"),borderRadius:3,barThickness:13}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const item=v[c.dataIndex];return ` ${fmtR(c.raw)}  |  ${(item.평가금액/1000000).toFixed(1)}백만`;
+      }}}},
+      scales:{x:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff08"}},
+        y:{ticks:{color:"#9090a8",font:{size:9},callback:(val,idx)=>{
+          const item=v[idx];
+          const nm=item.상품명.length>9?item.상품명.slice(0,9)+"…":item.상품명;
+          return `${nm}  ${(item.평가금액/1000000).toFixed(1)}M`;
+        }},grid:{display:false}}}}});
 }
+
+/* ── 자산 추이 ── */
+function histRange(days,el){
+  histDays=days;
+  document.querySelectorAll(".hist-btn").forEach(b=>b.classList.remove("on"));
+  el.classList.add("on");
+  renderHistory();
+}
+function renderHistory(){
+  const empty=document.getElementById("hist-empty");
+  if(!HIST.length){
+    empty.style.display="block";
+    document.getElementById("c-hist").parentElement.style.display="none";
+    document.querySelectorAll(".ccard")[1].style.display="none";
+    document.getElementById("hist-summary").innerHTML="";
+    return;
+  }
+  empty.style.display="none";
+  document.getElementById("c-hist").parentElement.style.display="block";
+
+  // 날짜 필터
+  let rows=HIST;
+  if(histDays>0){
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-histDays);
+    const cutStr=cutoff.toISOString().slice(0,10);
+    rows=HIST.filter(r=>r.날짜>=cutStr);
+  }
+  if(!rows.length)rows=HIST.slice(-30);
+
+  const labels=rows.map(r=>r.날짜.slice(5)); // MM-DD
+  const evals=rows.map(r=>r.총평가금액);
+  const rates=rows.map(r=>r.수익률);
+
+  // 요약
+  const first=rows[0],last=rows[rows.length-1];
+  const chg=last.총평가금액-first.총평가금액;
+  const chgR=first.총평가금액>0?(chg/first.총평가금액)*100:0;
+  const maxEv=Math.max(...evals),minEv=Math.min(...evals);
+  document.getElementById("hist-summary").innerHTML=`
+    <div class="ps-item"><div class="ps-lbl">기간 변화</div><div class="ps-val ${chg>=0?"pos":"neg"}">${chg>=0?"+":""}${fmtS(chg)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">기간 수익률</div><div class="ps-val ${chgR>=0?"pos":"neg"}">${fmtR(chgR)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">최고 평가</div><div class="ps-val neu">${fmtS(maxEv)}</div></div>`;
+
+  // 평가금액 꺾은선
+  dc("hist");
+  CH.hist=new Chart(document.getElementById("c-hist"),{type:"line",
+    data:{labels,datasets:[
+      {label:"총평가금액",data:evals,borderColor:"#6c6cff",backgroundColor:"#6c6cff18",fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,borderWidth:2},
+      {label:"총매입금액",data:rows.map(r=>r.총매입금액),borderColor:"#ffffff25",backgroundColor:"transparent",fill:false,tension:.3,pointRadius:0,borderWidth:1,borderDash:[4,4]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtS(c.raw)}`}}},
+      scales:{x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},
+        y:{ticks:{color:"#55556a",font:{size:9},callback:v=>fmtS(v)},grid:{color:"#ffffff06"}}}}});
+
+  // 수익률 꺾은선
+  dc("histr");
+  CH.histr=new Chart(document.getElementById("c-hist-rate"),{type:"line",
+    data:{labels,datasets:[{
+      label:"수익률",data:rates,
+      borderColor:"#3ecf8e",backgroundColor:"#3ecf8e18",fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,borderWidth:2
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` 수익률: ${fmtR(c.raw)}`}}},
+      scales:{x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},
+        y:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff06"}}}}});
+}
+
+/* ── 목표 비중 ── */
+function renderAlloc(d){
+  const nc=d.filter(x=>!isCash(x.상품명));
+  const types=[...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
+  const te=nc.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
+
+  // 목표 입력 폼
+  document.getElementById("alloc-inputs").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${types.map(t=>`
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:8px;padding:8px 12px">
+          <span style="flex:1;font-size:12px;font-weight:600;color:${AC[t]||'#888'}">${t}</span>
+          <input class="alloc-input" id="alloc-in-${t}" type="number" min="0" max="100" step="1"
+            value="${TARGET_ALLOC[t]??''}" placeholder="0" oninput="checkAllocTotal('${types.join(',')}')">
+          <span style="font-size:11px;color:var(--text3)">%</span>
+        </div>`).join("")}
+    </div>`;
+  checkAllocTotal(types.join(","));
+
+  // 갭 차트
+  const rows=types.map(t=>{
+    const g=nc.filter(x=>x.자산유형===t);
+    const e=g.reduce((s,x)=>s+x.평가금액,0);
+    const actual=te>0?(e/te)*100:0;
+    const target=TARGET_ALLOC[t]??0;
+    const gap=actual-target;
+    return{t,actual,target,gap,col:AC[t]||"#888"};
+  }).sort((a,b)=>b.actual-a.actual);
+
+  document.getElementById("alloc-rows").innerHTML=rows.map(({t,actual,target,gap,col})=>{
+    const gapCls=gap>0?"pos":gap<0?"neg":"";
+    const gapStr=(gap>0?"+":"")+gap.toFixed(1)+"%";
+    const maxW=Math.max(actual,target,1);
+    const actualW=(actual/maxW)*100;
+    const targetW=(target/maxW)*100;
+    return`<div class="alloc-row">
+      <div class="alloc-type" style="color:${col}">${t}</div>
+      <div class="alloc-bars">
+        <div class="alloc-label">
+          <span>현재 ${actual.toFixed(1)}%</span>
+          <span>${target>0?"목표 "+target+"%":"목표 미설정"}</span>
+        </div>
+        <div class="alloc-track">
+          <div class="alloc-actual" style="width:${actualW}%;background:${col};opacity:.85"></div>
+          ${target>0?`<div class="alloc-target-line" style="left:${targetW}%"></div>`:""}
+        </div>
+      </div>
+      <div class="alloc-gap ${gapCls}">${target>0?gapStr:"—"}</div>
+    </div>`;
+  }).join("");
+}
+
+function checkAllocTotal(typesStr){
+  const types=typesStr.split(",");
+  let total=0;
+  types.forEach(t=>{const el=document.getElementById("alloc-in-"+t);if(el)total+=parseFloat(el.value)||0;});
+  const warn=document.getElementById("alloc-total-warn");
+  if(total>0&&Math.abs(total-100)>0.01){
+    warn.style.display="block";
+    warn.textContent=`⚠️ 목표 합계 ${total.toFixed(1)}% (100%가 되어야 합니다)`;
+  }else{warn.style.display="none";}
+}
+
+function saveAlloc(){
+  const inputs=document.querySelectorAll(".alloc-input");
+  inputs.forEach(el=>{
+    const t=el.id.replace("alloc-in-","");
+    const v=parseFloat(el.value)||0;
+    if(v>0)TARGET_ALLOC[t]=v;else delete TARGET_ALLOC[t];
+  });
+  localStorage.setItem(ALLOC_KEY,JSON.stringify(TARGET_ALLOC));
+  renderAlloc(getD());
+  // 저장 피드백
+  const btn=event.target;btn.textContent="✅ 저장됨";
+  setTimeout(()=>{btn.textContent="저장";},1500);
+}
+
 function renderAsset(d){
   const nc=d.filter(x=>!isCash(x.상품명));
   const types=[...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
@@ -549,110 +763,70 @@ function sortBy(th){
   th.className=sortDir===1?"sort-asc":"sort-desc";
   renderTable(getD());
 }
-
 function renderTable(d){
   let rows=[...d];
   if(sortCol){
     const type=document.querySelector(`#tblHead th[data-col="${sortCol}"]`)?.dataset.type||"str";
-    rows.sort((a,b)=>{
-      let av=a[sortCol],bv=b[sortCol];
-      if(type==="num"){av=av==null?(sortDir===1?Infinity:-Infinity):av;bv=bv==null?(sortDir===1?Infinity:-Infinity):bv;return(av-bv)*sortDir;}
-      return(av||"").localeCompare(bv||"","ko")*sortDir;
-    });
+    rows.sort((a,b)=>{let av=a[sortCol],bv=b[sortCol];if(type==="num"){av=av==null?(sortDir===1?Infinity:-Infinity):av;bv=bv==null?(sortDir===1?Infinity:-Infinity):bv;return(av-bv)*sortDir;}return(av||"").localeCompare(bv||"","ko")*sortDir;});
   }else{rows.sort((a,b)=>(a.자산유형||"").localeCompare(b.자산유형||"","ko"));}
   _tableRows=rows;
   document.getElementById("tbody").innerHTML=rows.map((x,i)=>{
     const cls=x.평가손익>=0?"pos":"neg";
-    return`<tr>
-      <td><span class="tag t-${x.계좌}">${x.계좌}</span></td>
-      <td>${x.상품명}</td>
+    return`<tr><td><span class="tag t-${x.계좌}">${x.계좌}</span></td><td>${x.상품명}</td>
       <td><span class="tag t-${x.자산유형||'현금'}">${x.자산유형||"—"}</span></td>
-      <td>${qF(x.보유수량)}</td>
-      <td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR"):"—"}</td>
-      <td>${fmt(x.매입금액)}</td>
-      <td>${x.평가금액>0?fmt(x.평가금액):"—"}</td>
+      <td>${qF(x.보유수량)}</td><td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR"):"—"}</td>
+      <td>${fmt(x.매입금액)}</td><td>${x.평가금액>0?fmt(x.평가금액):"—"}</td>
       <td class="${cls}">${fmtR(x.손익률)}</td>
-      <td style="text-align:center"><button class="edit-btn" onclick="openModalByIdx(${i})">✏️ 수정</button></td>
-    </tr>`;
+      <td style="text-align:center"><button class="edit-btn" onclick="openModalByIdx(${i})">✏️ 수정</button></td></tr>`;
   }).join("");
 }
-
-function openModalByIdx(i){ openModal("edit",_tableRows[i]); }
-
-function barSort(col){
-  if(barSortCol===col){ barSortDir*=-1; }
-  else{ barSortCol=col; barSortDir=col==="종목명"?1:-1; }
-  renderBar(getD());
-}
+function openModalByIdx(i){openModal("edit",_tableRows[i]);}
 
 function openModal(mode,item){
   modalMode=mode;
-  const msg=document.getElementById("submitMsg");
-  msg.className="submit-msg";msg.textContent="";
-  const badge=document.getElementById("modeBadge");
-  const submitBtn=document.getElementById("submitBtn");
+  const msg=document.getElementById("submitMsg");msg.className="submit-msg";msg.textContent="";
+  const badge=document.getElementById("modeBadge"),submitBtn=document.getElementById("submitBtn");
   if(mode==="add"){
-    document.getElementById("modalTitle").textContent="종목 추가";
-    badge.textContent="NEW";badge.className="mode-badge badge-add";
-    submitBtn.textContent="구글 시트에 저장";
+    document.getElementById("modalTitle").textContent="종목 추가";badge.textContent="NEW";badge.className="mode-badge badge-add";submitBtn.textContent="구글 시트에 저장";
     document.getElementById("f-acct").value="";document.getElementById("f-acct").disabled=false;
     document.getElementById("f-name").value="";document.getElementById("f-name").disabled=false;
     document.getElementById("f-qty").value="";document.getElementById("f-cost").value="";
     document.getElementById("f-type").value="";document.getElementById("f-sub").value="";
     document.getElementById("f-orig-acct").value="";document.getElementById("f-orig-name").value="";
   }else{
-    document.getElementById("modalTitle").textContent="종목 수정";
-    badge.textContent="EDIT";badge.className="mode-badge badge-edit";
-    submitBtn.textContent="수정 저장";
-    document.getElementById("f-orig-acct").value=item.계좌;
-    document.getElementById("f-orig-name").value=item.상품명;
+    document.getElementById("modalTitle").textContent="종목 수정";badge.textContent="EDIT";badge.className="mode-badge badge-edit";submitBtn.textContent="수정 저장";
+    document.getElementById("f-orig-acct").value=item.계좌;document.getElementById("f-orig-name").value=item.상품명;
     document.getElementById("f-acct").value=item.계좌;document.getElementById("f-acct").disabled=true;
     document.getElementById("f-name").value=item.상품명;document.getElementById("f-name").disabled=true;
-    document.getElementById("f-qty").value=item.보유수량??"";
-    document.getElementById("f-cost").value=item.매입금액||"";
-    document.getElementById("f-type").value=item.자산유형||"";
-    document.getElementById("f-sub").value=item.세부분류||"";
+    document.getElementById("f-qty").value=item.보유수량??"";document.getElementById("f-cost").value=item.매입금액||"";
+    document.getElementById("f-type").value=item.자산유형||"";document.getElementById("f-sub").value=item.세부분류||"";
   }
   document.getElementById("itemModal").classList.add("open");lock();
 }
-
 function closeModal(){
   document.getElementById("itemModal").classList.remove("open");unlock();
-  document.getElementById("f-name").disabled=false;
-  document.getElementById("f-acct").disabled=false;
+  document.getElementById("f-name").disabled=false;document.getElementById("f-acct").disabled=false;
 }
-
 async function submitForm(){
-  const msg=document.getElementById("submitMsg");
-  const btn=document.getElementById("submitBtn");
+  const msg=document.getElementById("submitMsg"),btn=document.getElementById("submitBtn");
   const acct=modalMode==="edit"?document.getElementById("f-orig-acct").value:document.getElementById("f-acct").value.trim();
   const name=modalMode==="edit"?document.getElementById("f-orig-name").value:document.getElementById("f-name").value.trim();
-  const qtyN=document.getElementById("f-qty").value.trim();
-  const costN=document.getElementById("f-cost").value.trim();
-  const type=document.getElementById("f-type").value.trim();
-  const sub=document.getElementById("f-sub").value.trim();
+  const qtyN=document.getElementById("f-qty").value.trim(),costN=document.getElementById("f-cost").value.trim();
+  const type=document.getElementById("f-type").value.trim(),sub=document.getElementById("f-sub").value.trim();
   if(!acct||!name||!type){msg.className="submit-msg fail";msg.textContent="⚠️ 계좌, 종목명, 자산유형은 필수입니다.";return;}
-  btn.disabled=true;btn.textContent="저장 중...";
-  msg.className="submit-msg";msg.textContent="";
+  btn.disabled=true;btn.textContent="저장 중...";msg.className="submit-msg";msg.textContent="";
   const payload={action:modalMode==="add"?"addRow":"updateRow",계좌:acct,상품명:name,보유수량:qtyN,매입금액:costN,자산유형:type,세부분류:sub};
   try{
-    const params=new URLSearchParams();
-    Object.entries(payload).forEach(([k,v])=>params.append(k,v??""));
+    const params=new URLSearchParams();Object.entries(payload).forEach(([k,v])=>params.append(k,v??""));
     const res=await fetch(API+"?"+params.toString(),{method:"GET",redirect:"follow"});
-    const text=await res.text();
-    let json={};try{json=JSON.parse(text);}catch(_){}
+    const text=await res.text();let json={};try{json=JSON.parse(text);}catch(_){}
     if(json.result==="success"){
-      msg.className="submit-msg ok";
-      msg.textContent=modalMode==="add"?"✅ 구글 시트에 추가되었습니다!":"✅ 구글 시트가 수정되었습니다!";
+      msg.className="submit-msg ok";msg.textContent=modalMode==="add"?"✅ 구글 시트에 추가되었습니다!":"✅ 구글 시트가 수정되었습니다!";
       setTimeout(()=>{closeModal();loadData();},2000);
-    }else{throw new Error(json.error||json.message||"서버 응답: "+text.slice(0,120));}
+    }else{throw new Error(json.error||"서버 응답: "+text.slice(0,120));}
   }catch(e){
-    msg.className="submit-msg fail";
-    msg.innerHTML=`⚠️ 실패: ${e.message}<br><small>Apps Script를 새 버전으로 재배포했는지 확인하세요</small>`;
-  }finally{
-    btn.disabled=false;
-    btn.textContent=modalMode==="add"?"구글 시트에 저장":"수정 저장";
-  }
+    msg.className="submit-msg fail";msg.innerHTML=`⚠️ 실패: ${e.message}`;
+  }finally{btn.disabled=false;btn.textContent=modalMode==="add"?"구글 시트에 저장":"수정 저장";}
 }
 
 function openAssetPopup(t){
@@ -660,17 +834,9 @@ function openAssetPopup(t){
   const te=d.reduce((s,x)=>s+x.평가금액,0),tc=d.reduce((s,x)=>s+x.매입금액,0);
   const tp=te-tc,tr=tc>0?(tp/tc)*100:0,col=AC[t]||"#888";
   document.getElementById("popDot").style.background=col;
-  document.getElementById("popTitle").textContent=t;
-  document.getElementById("popSub").textContent=d.length+"개 종목";
-  document.getElementById("popSummary").innerHTML=`
-    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
-  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>
-    ${[...d].sort((a,b)=>b.평가금액-a.평가금액).map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item">
-      <div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.세부분류||"—"}</div></div>
-      <div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div>
-      <div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
+  document.getElementById("popTitle").textContent=t;document.getElementById("popSub").textContent=d.length+"개 종목";
+  document.getElementById("popSummary").innerHTML=`<div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div><div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div><div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
+  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>${[...d].sort((a,b)=>b.평가금액-a.평가금액).map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.세부분류||"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
   document.getElementById("popOverlay").classList.add("open");lock();
 }
 function openSubPopup(t,s){
@@ -678,17 +844,9 @@ function openSubPopup(t,s){
   const te=d.reduce((s,x)=>s+x.평가금액,0),tc=d.reduce((s,x)=>s+x.매입금액,0);
   const tp=te-tc,tr=tc>0?(tp/tc)*100:0,col=AC[t]||"#888";
   document.getElementById("popDot").style.background=col;
-  document.getElementById("popTitle").textContent=s;
-  document.getElementById("popSub").textContent=t+" · "+d.length+"개 종목";
-  document.getElementById("popSummary").innerHTML=`
-    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
-  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>
-    ${[...d].sort((a,b)=>b.평가금액-a.평가금액).map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item">
-      <div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.현재가?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</div></div>
-      <div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div>
-      <div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
+  document.getElementById("popTitle").textContent=s;document.getElementById("popSub").textContent=t+" · "+d.length+"개 종목";
+  document.getElementById("popSummary").innerHTML=`<div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div><div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div><div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
+  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순)</div>${[...d].sort((a,b)=>b.평가금액-a.평가금액).map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.현재가?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
   document.getElementById("popOverlay").classList.add("open");lock();
 }
 function closePopup(e){
