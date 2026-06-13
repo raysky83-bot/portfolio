@@ -264,6 +264,7 @@ tr:hover td{background:var(--bg3)}
             <div style="display:flex;gap:6px">
               <button id="bar-sort-name"  data-col="종목명"  data-label="종목명"  onclick="barSort('종목명')"  class="bar-sort-btn">종목명</button>
               <button id="bar-sort-eval"  data-col="평가금액" data-label="평가금액" onclick="barSort('평가금액')" class="bar-sort-btn">평가금액</button>
+              <button id="bar-sort-pnl"   data-col="평가손익" data-label="평가손익" onclick="barSort('평가손익')" class="bar-sort-btn">평가손익</button>
               <button id="bar-sort-rate"  data-col="손익률"  data-label="손익률"   onclick="barSort('손익률')"  class="bar-sort-btn" style="color:var(--accent)">손익률 ↓</button>
             </div>
           </div>
@@ -692,13 +693,14 @@ function barSort(col){
 function renderBar(d){
   const merged = mergeByName(d.filter(x=>x.매입금액>0&&!isCash(x.상품명)));
   const v = [...merged].sort((a,b)=>{
-    if(barSortCol==="손익률") return (a.손익률-b.손익률)*barSortDir;
+    if(barSortCol==="손익률")  return (a.손익률-b.손익률)*barSortDir;
     if(barSortCol==="평가금액") return (a.평가금액-b.평가금액)*barSortDir;
+    if(barSortCol==="평가손익") return ((a.평가금액-a.매입금액)-(b.평가금액-b.매입금액))*barSortDir;
     return a.상품명.localeCompare(b.상품명,"ko")*barSortDir;
   });
 
   // 정렬 버튼 상태 업데이트
-  ["bar-sort-name","bar-sort-eval","bar-sort-rate"].forEach(id=>{
+  ["bar-sort-name","bar-sort-eval","bar-sort-pnl","bar-sort-rate"].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const col=el.dataset.col;
     el.style.color=barSortCol===col?"var(--accent)":"var(--text3)";
