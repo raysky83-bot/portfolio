@@ -452,7 +452,7 @@ const AC={성장주:"#6c6cff",배당주:"#3ecf8e",채권:"#f5c842",금:"#ff9f43"
 const PAL=["#6c6cff","#3ecf8e","#f5c842","#ff9f43","#ff6b6b","#79c0ff","#56d364","#ffa657","#d2a8ff","#a5d6ff","#7ee787","#e3b341","#ff7b72"];
 const ALLOC_KEY="portfolio_target_alloc";
 
-let DATA=[],HIST=[],sel=new Set(["all"]),tab="overview",CH={};
+let DATA=[],HIST=[],ALIAS=new Map(),sel=new Set(["all"]),tab="overview",CH={};
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
 let _tableRows=[],histDays=180;
 
@@ -469,50 +469,45 @@ const lock=()=>{document.documentElement.style.overflow="hidden";document.body.s
 const unlock=()=>{document.documentElement.style.overflow="";document.body.style.overflow="";};
 
 // ── 종목명 단축 표시 ──────────────────────────────────────
-// 미국/영문 ETF·주식 → 티커/영문명으로, 한국 → 핵심 단어
+// 우선순위: ① ALIAS 맵(티커시트 별칭) → ② 자동 파싱 → ③ 앞 7자 절삭
 function shortName(nm) {
   if(!nm) return nm;
 
-  // 1) 이미 짧으면 그대로
+  // ① 별칭 우선 (티커 시트 D열)
+  if(ALIAS.has(nm)) return ALIAS.get(nm);
+
+  // 이미 짧으면 그대로
   if(nm.length <= 7) return nm;
 
-  // 2) 영문 티커 패턴 먼저 추출 (SPY, QQQ, SCHD, JEPI 등 2~6자 대문자)
-  const tickerMatch = nm.match(/\b([A-Z]{2,6})\b/);
+  // ② 자동 파싱 — 한국 ETF 브랜드 제거 후 핵심어
+  const isKoreanBrand = /^(TIGER|KODEX|KBSTAR|HANARO|ARIRANG|SOL |ACE |PLUS |마이다스|키움)/.test(nm);
 
-  // 3) 미국/해외 ETF 판별: 영문 포함 + 한국 브랜드 없으면 → 티커 우선
-  const isKoreanBrand = /TIGER|KODEX|KBSTAR|HANARO|ARIRANG|SOL|ACE|PLUS|마이다스|키움|삼성|한국|국내/.test(nm);
-  const hasEnglish = /[A-Za-z]/.test(nm);
-
-  if(hasEnglish && !isKoreanBrand && tickerMatch) {
-    // 순수 영문 종목명이면 티커만
-    return tickerMatch[1];
-  }
-
-  // 4) 한국 ETF/펀드: 핵심 키워드 추출
-  // 브랜드(TIGER, KODEX 등) 제거 후 핵심어만
-  let s = nm;
-  // 브랜드 제거
-  s = s.replace(/^(TIGER|KODEX|KBSTAR|HANARO|ARIRANG|SOL|ACE|PLUS|마이다스)\s*/i, '');
-  // 국가/통화 표기 정리
-  s = s.replace(/미국\s*/,'미국').replace(/글로벌\s*/,'글로벌');
-  // 괄호 이하 제거
-  s = s.replace(/\(.*?\)/g,'').trim();
-  // 레버리지/인버스 숫자 정리
-  s = s.replace(/\s*(2X|3X|인버스)\s*/g,' $1').trim();
-
-  // 영문 부분이 있으면(한국ETF+영문) 영문 부분 추출해서 앞에
-  if(isKoreanBrand && tickerMatch) {
-    // 예: "TIGER 미국S&P500" → "S&P500"
-    const engPart = nm.match(/([A-Z][A-Z&0-9.]+)/g);
-    if(engPart) {
-      const key = engPart.filter(e => !/^(TIGER|KODEX|KBSTAR|HANARO|ARIRANG|SOL|ACE|PLUS)$/.test(e));
+  if(isKoreanBrand) {
+    // 브랜드명 제거
+    let s = nm.replace(/^(TIGER|KODEX|KBSTAR|HANARO|ARIRANG|SOL|ACE|PLUS|마이다스|키움)\s*/i, '');
+    // 괄호 제거
+    s = s.replace(/\(.*?\)/g,'').trim();
+    // 영문 자산코드가 있으면 추출 (S&P500, NASDAQ 등)
+    const engPart = s.match(/([A-Z&0-9.]+(?:\+[0-9]+%)?(?:커버드콜)?)/g);
+    if(engPart && engPart.length) {
+      const key = engPart.filter(e => e.length >= 2);
       if(key.length) s = key.join(' ');
     }
+    if(s.length > 8) s = s.slice(0,7)+'…';
+    return s || nm.slice(0,7)+'…';
   }
 
-  // 8자 이상이면 앞 7자
-  if(s.length > 8) s = s.slice(0,7)+'…';
-  return s || nm.slice(0,7)+'…';
+  // 순수 영문 종목 → 첫 번째 대문자 단어(티커 후보)
+  const hasEnglish = /[A-Za-z]/.test(nm);
+  if(hasEnglish) {
+    const tickerMatch = nm.match(/\b([A-Z]{2,6})\b/);
+    if(tickerMatch) return tickerMatch[1];
+    // 아니면 앞 7자
+    return nm.slice(0,7)+'…';
+  }
+
+  // ③ 한글 종목: 앞 7자
+  return nm.slice(0,7)+'…';
 }
 
 // ── 종목명 기준 합산 ────────────────────────────────────
@@ -733,6 +728,14 @@ async function loadData(){
     const json=JSON.parse(await res.text());
     if(json&&json.error)throw new Error(json.error);
     if(!Array.isArray(json)||!json.length)throw new Error("데이터 없음");
+    // 별칭 맵 먼저 구성 (상품명 → 별칭)
+    ALIAS = new Map();
+    json.forEach(r => {
+      const nm    = String(r["상품명"] || "").trim();
+      const alias = String(r["별칭"]   || "").trim();
+      if(nm && alias) ALIAS.set(nm, alias);
+    });
+
     DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
       const nm=String(r["상품명"]||"").trim();
       const cost=toN(r["매입금액"])??0;
