@@ -136,9 +136,9 @@ tr:hover td{background:var(--bg3)}
 .bt-bar-cell{min-width:60px}
 .bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative}
 .bt-bar-fill{height:100%;border-radius:3px;transition:width .4s}
-.bt-eval{width:60px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--text2)}
-.bt-pnl{width:54px;text-align:right;font-size:9px;font-family:'DM Mono',monospace}
-.bt-rate{width:46px;text-align:right;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
+.bt-eval{width:80px;text-align:right;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
+.bt-pnl{width:70px;text-align:right;font-size:10px;font-family:'DM Mono',monospace}
+.bt-rate{width:52px;text-align:right;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
 
 @media(min-width:640px){
   .mcard-grid{grid-template-columns:repeat(4,1fr)}
@@ -462,7 +462,8 @@ let TARGET_ALLOC=JSON.parse(localStorage.getItem(ALLOC_KEY)||"{}");
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
 const fmt=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
-const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(2)+"%";
+const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(1)+"%";
+const fmtN=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
 const fmtS=n=>{const a=Math.abs(n);return a>=100000000?(n<0?"-":"")+(Math.round(a/10000000)/10)+"억":a>=10000?(n<0?"-":"")+Math.round(a/10000)+"만":Math.round(n).toLocaleString("ko-KR");};
 const qF=n=>n==null?"—":(Number.isInteger(n)?n.toLocaleString("ko-KR"):n.toFixed(4));
 const dc=k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
@@ -665,8 +666,8 @@ function renderTreemap(d) {
     const rateCls = c.rate>=0?'pos':'neg';
     const pnlColor = c.rate>=0?'rgba(255,255,255,0.88)':'rgba(255,190,190,0.95)';
     const inner = small ? `
-      <div class="treemap-name" style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;letter-spacing:-.3px">${c.type}</div>
-      ${mid?`<div style="font-size:${big?'11':'9'}px;color:rgba(255,255,255,0.78);margin-top:3px;font-family:'DM Mono',monospace">${c.pct.toFixed(1)}%&nbsp;·&nbsp;${fmtS(c.eval)}</div>`:''}
+      <div class="treemap-name" style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;letter-spacing:-.3px">${c.type}${mid?'('+c.pct.toFixed(1)+'%)':''}</div>
+      ${mid?`<div style="font-size:${big?'11':'9'}px;color:rgba(255,255,255,0.78);margin-top:3px;font-family:'DM Mono',monospace">${fmtS(c.eval)}</div>`:''}
       ${big?`<div style="font-size:10px;margin-top:3px;font-family:'DM Mono',monospace;color:${pnlColor}">${c.pnl>=0?'+':''  }${fmtS(c.pnl)}</div>`:''}
       ${mid?`<div style="font-size:${big?'13':'10'}px;margin-top:${big?5:2}px;font-weight:700;font-family:'DM Mono',monospace;color:${c.rate>=0?'#b7ffdc':'#ffb3b3'}">${fmtR(c.rate)}</div>`:''}
     ` : '';
@@ -727,8 +728,8 @@ function renderBar(d){
           <div class="bt-bar-fill" style="width:${barW}%;background:${barCol}"></div>
         </div>
       </td>
-      <td class="bt-eval">${fmtS(x.평가금액)}</td>
-      <td class="bt-pnl ${rateCls}">${pnl>=0?'+':''}${fmtS(pnl)}</td>
+      <td class="bt-eval">${fmtN(x.평가금액)}</td>
+      <td class="bt-pnl ${rateCls}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</td>
       <td class="bt-rate ${rateCls}">${fmtR(x.손익률)}</td>
     </tr>`;
   }).join('');
