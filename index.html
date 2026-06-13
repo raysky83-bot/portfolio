@@ -254,8 +254,8 @@ tr:hover td{background:var(--bg3)}
       <div class="chart2">
         <!-- 트리맵 -->
         <div class="ccard">
-          <div class="ccard-ttl">종목별 비중 (트리맵)</div>
-          <div id="treemap-wrap" class="treemap-wrap" style="height:260px"></div>
+          <div class="ccard-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
+          <div id="treemap-wrap" class="treemap-wrap" style="height:300px"></div>
         </div>
         <!-- 수익률 바 테이블 -->
         <div class="ccard">
@@ -621,47 +621,65 @@ function rateColor(rate, baseCol) {
 function renderTreemap(d) {
   const wrap = document.getElementById('treemap-wrap');
   if(!wrap) return;
-  const merged = mergeByName(d.filter(x=>x.평가금액>0&&!isCash(x.상품명)));
-  const sorted = [...merged].sort((a,b)=>b.평가금액-a.평가금액);
-  const te = sorted.reduce((s,x)=>s+x.평가금액,0);
-  if(!te){ wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px">데이터 없음</div>'; return; }
+
+  const nc = d.filter(x=>x.평가금액>0&&!isCash(x.상품명));
+  const types = [...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
+  const te = nc.reduce((s,x)=>s+x.평가금액,0);
+  if(!te||!types.length){
+    wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px">데이터 없음</div>';
+    return;
+  }
+
+  // 자산유형별 집계
+  const typeData = types.map(t=>{
+    const g   = nc.filter(x=>x.자산유형===t);
+    const ev  = g.reduce((s,x)=>s+x.평가금액,0);
+    const co  = g.reduce((s,x)=>s+x.매입금액,0);
+    const pnl = ev - co;
+    const rate= co>0?(pnl/co)*100:0;
+    return { type:t, eval:ev, cost:co, pnl, rate, pct:te>0?(ev/te)*100:0 };
+  }).sort((a,b)=>b.eval-a.eval);
 
   const W = wrap.offsetWidth || 400;
-  const H = wrap.offsetHeight || 260;
+  const H = 300;
+  wrap.style.height = H + 'px';
 
-  const items = sorted.map(x=>({
-    value: x.평가금액,
-    name: x.상품명,
-    short: shortName(x.상품명),
-    pct: (x.평가금액/te*100),
-    rate: x.손익률,
-    eval: x.평가금액,
-    color: rateColor(x.손익률)
+  const items = typeData.map(x=>({
+    value: x.eval,
+    type:  x.type,
+    pct:   x.pct,
+    rate:  x.rate,
+    eval:  x.eval,
+    pnl:   x.pnl,
+    color: rateColor(x.rate)
   }));
 
   const cells = squarify(items, 0, 0, W, H);
   wrap.style.position='relative';
-  wrap.innerHTML = cells.map((c,i) => {
+  wrap.innerHTML = cells.map(c => {
     const minDim = Math.min(c.w, c.h);
-    const showName = minDim > 28 && c.w > 40;
-    const showPct  = minDim > 42 && c.w > 55;
-    const showRate = minDim > 56 && c.w > 55;
-    const rateCls  = c.rate >= 0 ? 'pos' : 'neg';
-    return `<div class="treemap-cell" style="left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${c.color}" 
-      title="${c.name}\n평가: ${fmtS(c.eval)}\n비중: ${c.pct.toFixed(1)}%\n수익률: ${fmtR(c.rate)}"
-      onclick="treemapClick(event,'${c.name.replace(/'/g,"\\'")}')">
-      <div class="treemap-inner">
-        ${showName?`<div class="treemap-name" style="font-size:${minDim>60?'11':'9'}px">${c.short}</div>`:''}
-        ${showPct?`<div class="treemap-pct">${c.pct.toFixed(1)}%</div>`:''}
-        ${showRate?`<div class="treemap-rate ${rateCls}">${fmtR(c.rate)}</div>`:''}
-      </div>
+    const big  = minDim > 80 && c.w > 90;
+    const mid  = minDim > 46 && c.w > 56;
+    const small= minDim > 26 && c.w > 34;
+    const rateCls = c.rate>=0?'pos':'neg';
+    const pnlColor = c.rate>=0?'rgba(255,255,255,0.88)':'rgba(255,190,190,0.95)';
+    const inner = small ? `
+      <div class="treemap-name" style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;letter-spacing:-.3px">${c.type}</div>
+      ${mid?`<div style="font-size:${big?'11':'9'}px;color:rgba(255,255,255,0.78);margin-top:3px;font-family:'DM Mono',monospace">${c.pct.toFixed(1)}%&nbsp;·&nbsp;${fmtS(c.eval)}</div>`:''}
+      ${big?`<div style="font-size:10px;margin-top:3px;font-family:'DM Mono',monospace;color:${pnlColor}">${c.pnl>=0?'+':''  }${fmtS(c.pnl)}</div>`:''}
+      ${mid?`<div style="font-size:${big?'13':'10'}px;margin-top:${big?5:2}px;font-weight:700;font-family:'DM Mono',monospace;color:${c.rate>=0?'#b7ffdc':'#ffb3b3'}">${fmtR(c.rate)}</div>`:''}
+    ` : '';
+    return `<div class="treemap-cell"
+      style="left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${c.color};border-radius:7px;cursor:pointer"
+      onclick="treemapClickType('${c.type.replace(/'/g,"\\'")}')" >
+      <div class="treemap-inner">${inner}</div>
     </div>`;
   }).join('');
 }
 
-function treemapClick(e, nm) {
-  // 클릭 시 종목 툴팁/팝업 (향후 확장용, 지금은 브라우저 title로 표시)
-  e.stopPropagation();
+// 자산유형 트리맵 탭 → 팝업
+function treemapClickType(t) {
+  openAssetPopup(t);
 }
 
 // ── 수익률 바 테이블 ──────────────────────────────────────
