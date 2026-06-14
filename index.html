@@ -502,7 +502,7 @@ function rateColor(r){
 // ── 트리맵 렌더 (자산유형별) ─────────────────────────────
 function renderTreemap(d){
   const wrap=document.getElementById('treemap-wrap');if(!wrap)return;
-  const nc=d.filter(x=>x.평가금액>0&&!isCash(x.상품명));
+  const nc=d.filter(x=>x.평가금액>0);
   const types=[...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
   const te=nc.reduce((s,x)=>s+x.평가금액,0);
   if(!te||!types.length){wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px">데이터 없음</div>';return;}
@@ -828,7 +828,7 @@ async function submitForm(){
 
 // ── 자산유형 팝업 (트리맵 탭) ───────────────────────────
 function openAssetPopup(t){
-  const d=getD().filter(x=>x.자산유형===t&&!isCash(x.상품명)&&x.평가금액>0);
+  const d=getD().filter(x=>x.자산유형===t&&x.평가금액>0);
   const te=d.reduce((s,x)=>s+x.평가금액,0),tc=d.reduce((s,x)=>s+x.매입금액,0);
   const tp=te-tc,tr=tc>0?(tp/tc)*100:0,col=getTypeColor(t);
   const merged=mergeByName(d).sort((a,b)=>b.평가금액-a.평가금액);
