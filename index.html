@@ -62,9 +62,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .bar-table tr:last-child{border-bottom:none}
 .bar-table td{padding:5px 4px;vertical-align:middle;text-align:right}
 .bt-name{width:82px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px!important;text-align:left}
-.bt-bar-cell{min-width:60px;text-align:right}
-.bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden;display:flex;justify-content:flex-end}
-.bt-bar-fill{height:100%;border-radius:3px;transition:width .4s;flex-shrink:0}
+.bt-bar-cell{width:80px;text-align:left}
+.bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.bt-bar-fill{height:100%;border-radius:3px;transition:width .4s}
 .bt-eval{width:80px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
 .bt-pnl{width:72px;font-size:10px;font-family:'DM Mono',monospace}
 .bt-rate{width:52px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
@@ -550,10 +550,10 @@ function renderBar(d){
     const pnl=x.평가금액-x.매입금액;
     return`<tr>
       <td class="bt-name" title="${x.상품명}">${shortName(x.상품명)}</td>
-      <td class="bt-bar-cell"><div class="bt-bar-wrap"><div class="bt-bar-fill" style="width:${bw}%;background:${bc}"></div></div></td>
       <td class="bt-eval">${fmtN(x.평가금액)}</td>
       <td class="bt-pnl ${rc}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</td>
       <td class="bt-rate ${rc}">${fmtR(x.손익률)}</td>
+      <td class="bt-bar-cell"><div class="bt-bar-wrap"><div class="bt-bar-fill" style="width:${bw}%;background:${bc}"></div></div></td>
     </tr>`;
   }).join('');
   document.getElementById("bar-table-wrap").innerHTML=`<table class="bar-table"><tbody>${rows}</tbody></table>`;
@@ -576,6 +576,7 @@ async function loadData(){
     ALIAS=new Map();
     json.forEach(r=>{const nm=String(r["상품명"]||"").trim(),al=String(r["별칭"]||"").trim();if(nm&&al)ALIAS.set(nm,al);});
     ACCT_STATS=acctStatsRaw;
+    if(!Object.keys(ACCT_STATS).length) console.warn('[대시보드] ACCT_STATS 없음 — Apps Script를 최신 버전으로 재배포하고 계좌현황 시트를 추가하세요');
     DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
       const nm=String(r["상품명"]||"").trim(),cost=toN(r["매입금액"])??0;
       let ev=toN(r["평가금액"])??0;if(isCash(nm))ev=Math.abs(cost);
@@ -663,6 +664,20 @@ function renderCards(d){
 }
 
 function toggleCostMode(){
+  if(costMode==="current" && !Object.keys(ACCT_STATS).length){
+    // ACCT_STATS 없음 → 안내
+    const badge=document.getElementById("cost-mode-badge");
+    const sub=document.getElementById("m-cost-sub");
+    badge.textContent="미설정";
+    badge.style.color="#f5c842";
+    sub.textContent="⚠️ 계좌현황 시트 + Apps Script 재배포 필요";
+    sub.style.color="#f5c842";
+    setTimeout(()=>{
+      badge.textContent="보유기준";badge.style.color="";
+      sub.textContent="탭하면 실제 입금 기준으로 전환";sub.style.color="";
+    },3000);
+    return;
+  }
   costMode=costMode==="current"?"actual":"current";
   renderCards(getD());
 }
