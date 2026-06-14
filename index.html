@@ -62,9 +62,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .bar-table tr:last-child{border-bottom:none}
 .bar-table td{padding:5px 4px;vertical-align:middle;text-align:right}
 .bt-name{width:82px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px!important;text-align:left}
-.bt-bar-cell{min-width:60px;text-align:left}
-.bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden}
-.bt-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.bt-bar-cell{min-width:60px;text-align:right}
+.bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden;display:flex;justify-content:flex-end}
+.bt-bar-fill{height:100%;border-radius:3px;transition:width .4s;flex-shrink:0}
 .bt-eval{width:80px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
 .bt-pnl{width:72px;font-size:10px;font-family:'DM Mono',monospace}
 .bt-rate{width:52px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
@@ -210,7 +210,7 @@ tr:hover td{background:var(--bg3)}
     <div id="p-overview" class="panel on">
       <div class="mcard-grid">
         <div class="mcard"><div class="mcard-lbl">총 평가금액</div><div class="mcard-val neu" id="m-eval">—</div><div class="mcard-sub" id="m-eval-sub"></div></div>
-        <div class="mcard"><div class="mcard-lbl">투자 원금</div><div class="mcard-val neu" id="m-cost">—</div></div>
+        <div class="mcard" id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none"><div class="mcard-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 5px;border-radius:3px;background:#ffffff12;color:var(--text3);vertical-align:middle">보유기준</span></div><div class="mcard-val neu" id="m-cost">—</div><div class="mcard-sub" id="m-cost-sub" style="font-size:9px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace">탭하면 실제 입금 기준으로 전환</div></div>
         <div class="mcard"><div class="mcard-lbl">평가 손익</div><div class="mcard-val" id="m-pnl">—</div></div>
         <div class="mcard"><div class="mcard-lbl">수익률</div><div class="mcard-val" id="m-rate">—</div></div>
       </div>
@@ -399,6 +399,7 @@ function buildTypeColors(data){
 }
 
 let DATA=[],HIST=[],ALIAS=new Map(),ACCT_STATS={},sel=new Set(["all"]),tab="overview",CH={};
+let costMode='current'; // 'current'=보유기준 | 'actual'=실제입금기준
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
 let _tableRows=[],histDays=180;
 
@@ -638,12 +639,32 @@ window.addEventListener('resize',()=>{if(tab==="overview")renderTreemap(getD());
 function renderCards(d){
   const ev=d.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
   const co=d.filter(x=>x.매입금액>0).reduce((s,x)=>s+x.매입금액,0);
-  const tp=ev-co,tr=co>0?(tp/co)*100:0;
   document.getElementById("m-eval").textContent=fmt(ev);
   document.getElementById("m-eval-sub").textContent=mergeByName(d.filter(x=>x.평가금액>0&&!isCash(x.상품명))).length+"개 종목";
-  document.getElementById("m-cost").textContent=fmt(co);
+
+  // 원금 기준 결정
+  let baseCost=co, baseLabel="보유기준", baseSub="탭하면 실제 입금 기준으로 전환";
+  if(costMode==="actual"){
+    // 선택된 계좌의 실제 입금 합산
+    const accts=isAll()?[...new Set(DATA.map(x=>x.계좌))]:[...sel];
+    const totalIn=accts.reduce((s,a)=>s+(ACCT_STATS[a]?.총입금원금||0),0);
+    const totalOut=accts.reduce((s,a)=>s+(ACCT_STATS[a]?.총출금액||0),0);
+    if(totalIn>0){baseCost=totalIn;baseLabel="실제입금";baseSub="실제 입금 "+fmtN(totalIn)+(totalOut>0?" · 출금 "+fmtN(totalOut):"");}
+    else{costMode="current";baseLabel="보유기준";baseSub="계좌현황 시트 미입력";}
+  }
+
+  const tp=ev-baseCost,tr=baseCost>0?(tp/baseCost)*100:0;
+  document.getElementById("m-cost").textContent=fmt(baseCost);
+  document.getElementById("cost-mode-badge").textContent=baseLabel;
+  document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"탭하면 실제 입금 기준으로 전환";
+  document.getElementById("cost-card").style.borderColor=costMode==="actual"?"#f5c84250":"";
   const pe=document.getElementById("m-pnl");pe.textContent=(tp>=0?"+":"")+fmt(tp);pe.className="mcard-val "+(tp>=0?"pos":"neg");
   const re=document.getElementById("m-rate");re.textContent=fmtR(tr);re.className="mcard-val "+(tr>=0?"pos":"neg");
+}
+
+function toggleCostMode(){
+  costMode=costMode==="current"?"actual":"current";
+  renderCards(getD());
 }
 
 // ── 계좌별 순수익률 ──────────────────────────────────────
