@@ -206,6 +206,21 @@ tr:hover td{background:var(--bg3)}
 .pop-right{text-align:right;flex-shrink:0}
 .pop-eval{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
 .pop-rate{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;margin-top:1px}
+
+/* 계좌별 순수익률 카드 */
+.acct-rate-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.arcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden}
+.arcard::before{content:'';position:absolute;inset:0;opacity:.04;background:var(--card-accent,#6c6cff)}
+.arcard-name{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.arcard-tag{display:inline-block;width:6px;height:6px;border-radius:2px;flex-shrink:0}
+.arcard-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.arcard-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+.arcard-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.arcard-divider{height:1px;background:var(--border);margin:7px 0}
+.arcard-pure-lbl{font-size:9px;font-family:'DM Mono',monospace;color:#f5c842;letter-spacing:.3px}
+.arcard-pure-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace}
+.arcard-hint{font-size:8px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+@media(min-width:640px){.acct-rate-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -250,6 +265,13 @@ tr:hover td{background:var(--bg3)}
         <div class="mcard"><div class="mcard-lbl">투자 원금</div><div class="mcard-val neu" id="m-cost">—</div></div>
         <div class="mcard"><div class="mcard-lbl">평가 손익</div><div class="mcard-val" id="m-pnl">—</div></div>
         <div class="mcard"><div class="mcard-lbl">수익률</div><div class="mcard-val" id="m-rate">—</div></div>
+      </div>
+      <!-- 계좌별 순수익률 -->
+      <div id="acct-rate-section" style="margin-bottom:16px;display:none">
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;letter-spacing:.5px">
+          ACCOUNT RETURNS · <span style="color:#f5c842">★ 순수익률</span> = 실제 입출금 기준
+        </div>
+        <div class="acct-rate-grid" id="acct-rate-grid"></div>
       </div>
       <div class="chart2">
         <!-- 트리맵 -->
@@ -453,7 +475,7 @@ const AC={성장주:"#6c6cff",배당주:"#3ecf8e",채권:"#f5c842",금:"#ff9f43"
 const PAL=["#6c6cff","#3ecf8e","#f5c842","#ff9f43","#ff6b6b","#79c0ff","#56d364","#ffa657","#d2a8ff","#a5d6ff","#7ee787","#e3b341","#ff7b72"];
 const ALLOC_KEY="portfolio_target_alloc";
 
-let DATA=[],HIST=[],ALIAS=new Map(),sel=new Set(["all"]),tab="overview",CH={};
+let DATA=[],HIST=[],ALIAS=new Map(),ACCT_STATS={},sel=new Set(["all"]),tab="overview",CH={};
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
 let _tableRows=[],histDays=180;
 
@@ -746,16 +768,23 @@ async function loadData(){
   try{
     const res=await fetch(API+"?t="+Date.now(),{method:"GET",redirect:"follow"});
     if(!res.ok)throw new Error("HTTP "+res.status);
-    const json=JSON.parse(await res.text());
-    if(json&&json.error)throw new Error(json.error);
-    if(!Array.isArray(json)||!json.length)throw new Error("데이터 없음");
-    // 별칭 맵 먼저 구성 (상품명 → 별칭)
+    const raw=JSON.parse(await res.text());
+    if(raw&&raw.error)throw new Error(raw.error);
+    // Apps Script가 {rows, acctStats} 또는 기존 배열 형태 모두 지원
+    const json = Array.isArray(raw) ? raw : (raw.rows || []);
+    const acctStatsRaw = Array.isArray(raw) ? {} : (raw.acctStats || {});
+    if(!json.length)throw new Error("데이터 없음");
+
+    // 별칭 맵 구성
     ALIAS = new Map();
     json.forEach(r => {
       const nm    = String(r["상품명"] || "").trim();
       const alias = String(r["별칭"]   || "").trim();
       if(nm && alias) ALIAS.set(nm, alias);
     });
+
+    // 계좌현황 저장
+    ACCT_STATS = acctStatsRaw;
 
     DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
       const nm=String(r["상품명"]||"").trim();
@@ -817,6 +846,7 @@ function switchTab(el){
 function renderAll(){
   const d=getD();
   renderCards(d);
+  if(tab==="overview") renderAcctRates();
   if(tab==="overview"){renderTreemap(d);renderBar(d);}
   if(tab==="history"){renderHistory();}
   if(tab==="alloc"){renderAlloc(d);}
@@ -828,6 +858,56 @@ function renderAll(){
 window.addEventListener('resize',()=>{
   if(tab==="overview") renderTreemap(getD());
 });
+
+const ACCT_COL={연금저축:'#6c6cff',ISA:'#3ecf8e',IRP:'#f5c842',일반:'#ff6b6b',CMA:'#79c0ff'};
+// ── 계좌별 순수익률 렌더 ─────────────────────────────────
+function renderAcctRates() {
+  const section = document.getElementById('acct-rate-section');
+  const grid    = document.getElementById('acct-rate-grid');
+  const accts   = [...new Set(DATA.map(d=>d.계좌))];
+  const hasStats = Object.keys(ACCT_STATS).length > 0;
+
+  // 계좌현황 데이터 없으면 섹션 숨김
+  if(!hasStats){ section.style.display='none'; return; }
+  section.style.display='block';
+
+  grid.innerHTML = accts.map(acct => {
+    const rows  = DATA.filter(d=>d.계좌===acct&&(d.평가금액>0||d.매입금액>0));
+    const ev    = rows.reduce((s,x)=>s+x.평가금액,0);
+    const co    = rows.reduce((s,x)=>s+x.매입금액,0);
+    const curR  = co>0?((ev-co)/co)*100:null;  // 현재 수익률
+
+    const stat  = ACCT_STATS[acct];
+    const inAmt = stat?.총입금원금 || 0;
+    const outAmt= stat?.총출금액   || 0;
+    // 순수익률 = (현재평가 + 출금누계 - 총입금) / 총입금
+    const pureR = inAmt>0 ? ((ev + outAmt - inAmt) / inAmt)*100 : null;
+    const col   = ACCT_COL[acct] || '#888';
+    const curCls= curR==null?'neu':curR>=0?'pos':'neg';
+    const purCls= pureR==null?'neu':pureR>=0?'pos':'neg';
+
+    return `<div class="arcard" style="--card-accent:${col}">
+      <div class="arcard-name">
+        <span class="arcard-tag" style="background:${col}"></span>
+        ${acct}
+      </div>
+      <div class="arcard-row">
+        <span class="arcard-lbl">현재 보유 수익률</span>
+        <span class="arcard-val ${curCls}">${curR!=null?fmtR(curR):'—'}</span>
+      </div>
+      <div class="arcard-row">
+        <span class="arcard-lbl">평가금액</span>
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)">${fmtS(ev)}</span>
+      </div>
+      <div class="arcard-divider"></div>
+      <div class="arcard-row">
+        <span class="arcard-pure-lbl">★ 순수익률</span>
+        <span class="arcard-pure-val ${purCls}">${pureR!=null?fmtR(pureR):'입금액 미입력'}</span>
+      </div>
+      ${inAmt>0?`<div class="arcard-hint">총입금 ${fmtS(inAmt)} · 출금 ${fmtS(outAmt)}</div>`:''}
+    </div>`;
+  }).join('');
+}
 
 function renderCards(d){
   const ev=d.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
