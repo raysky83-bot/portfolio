@@ -463,7 +463,7 @@ const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
 const fmt=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
 const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(1)+"%";
-const fmtN=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
+const fmtN=n=>{if(n==null)return"—";const sign=n<0?"-":"";const a=Math.abs(n);const m=Math.round(a/10000);return sign+m.toLocaleString("ko-KR")+"만원";};
 const fmtS=n=>{const a=Math.abs(n);return a>=100000000?(n<0?"-":"")+(Math.round(a/10000000)/10)+"억":a>=10000?(n<0?"-":"")+Math.round(a/10000)+"만":Math.round(n).toLocaleString("ko-KR");};
 const qF=n=>n==null?"—":(Number.isInteger(n)?n.toLocaleString("ko-KR"):n.toFixed(4));
 const dc=k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
@@ -666,7 +666,7 @@ function renderTreemap(d) {
     const rateCls = c.rate>=0?'pos':'neg';
     const pnlColor = c.rate>=0?'rgba(255,255,255,0.88)':'rgba(255,190,190,0.95)';
     const inner = small ? `
-      <div class="treemap-name" style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;letter-spacing:-.3px">${c.type}${mid?'('+c.pct.toFixed(1)+'%)':''}</div>
+      <div class="treemap-name" style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;letter-spacing:-.3px">${c.type}${mid?'('+Math.round(c.pct)+'%)':''}</div>
       ${mid?`<div style="font-size:${big?'11':'9'}px;color:rgba(255,255,255,0.78);margin-top:3px;font-family:'DM Mono',monospace">${fmtS(c.eval)}</div>`:''}
       ${big?`<div style="font-size:10px;margin-top:3px;font-family:'DM Mono',monospace;color:${pnlColor}">${c.pnl>=0?'+':''  }${fmtS(c.pnl)}</div>`:''}
       ${mid?`<div style="font-size:${big?'13':'10'}px;margin-top:${big?5:2}px;font-weight:700;font-family:'DM Mono',monospace;color:${c.rate>=0?'#b7ffdc':'#ffb3b3'}">${fmtR(c.rate)}</div>`:''}
@@ -933,7 +933,7 @@ function renderAlloc(d){
 
   document.getElementById("alloc-rows").innerHTML=rows.map(({t,actual,target,gap,col})=>{
     const gapCls=gap>0?"pos":gap<0?"neg":"";
-    const gapStr=(gap>0?"+":"")+gap.toFixed(1)+"%";
+    const gapStr=(gap>0?"+":"")+Math.round(gap)+"%";
     const maxW=Math.max(actual,target,1);
     const actualW=(actual/maxW)*100;
     const targetW=(target/maxW)*100;
@@ -961,7 +961,7 @@ function checkAllocTotal(typesStr){
   const warn=document.getElementById("alloc-total-warn");
   if(total>0&&Math.abs(total-100)>0.01){
     warn.style.display="block";
-    warn.textContent=`⚠️ 목표 합계 ${total.toFixed(1)}% (100%가 되어야 합니다)`;
+    warn.textContent=`⚠️ 목표 합계 ${Math.round(total)}% (100%가 되어야 합니다)`;
   }else{warn.style.display="none";}
 }
 
@@ -985,13 +985,13 @@ function renderAsset(d){
   document.getElementById("asset-cards").innerHTML=types.map(t=>{
     const g=nc.filter(x=>x.자산유형===t);
     const e=g.reduce((s,x)=>s+x.평가금액,0),c=g.reduce((s,x)=>s+x.매입금액,0),r=c>0?((e-c)/c)*100:0;
-    return`<div class="acard" style="cursor:pointer" onclick="openAssetPopup('${t}')"><div class="acard-lbl">${t} ›</div><div class="acard-val">${fmtS(e)}</div><div class="acard-rate ${r>=0?"pos":"neg"}">${fmtR(r)} · ${te>0?((e/te)*100).toFixed(1):0}%</div></div>`;
+    return`<div class="acard" style="cursor:pointer" onclick="openAssetPopup('${t}')"><div class="acard-lbl">${t} ›</div><div class="acard-val">${fmtS(e)}</div><div class="acard-rate ${r>=0?"pos":"neg"}">${fmtR(r)} · ${te>0?Math.round((e/te)*100):0}%</div></div>`;
   }).join("");
   const p2v=types.map(t=>nc.filter(x=>x.자산유형===t).reduce((s,x)=>s+x.평가금액,0)),p2c=types.map(t=>AC[t]||"#888");
   dc("pie2");
   CH.pie2=new Chart(document.getElementById("c-pie2"),{type:"doughnut",data:{labels:types,datasets:[{data:p2v,backgroundColor:p2c,borderColor:"transparent",borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${((c.raw/te)*100).toFixed(1)}%`}}}}});
-  document.getElementById("leg-pie2").innerHTML=types.map((t,i)=>`<span class="li"><span class="ld" style="background:${p2c[i]}"></span>${t} ${((p2v[i]/te)*100).toFixed(1)}%</span>`).join("");
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${Math.round((c.raw/te)*100)}%`}}}}});
+  document.getElementById("leg-pie2").innerHTML=types.map((t,i)=>`<span class="li"><span class="ld" style="background:${p2c[i]}"></span>${t} ${Math.round((p2v[i]/te)*100)}%</span>`).join("");
   const b2=types.map(t=>{const g=nc.filter(x=>x.자산유형===t);const e=g.reduce((s,x)=>s+x.평가금액,0),c=g.reduce((s,x)=>s+x.매입금액,0);return{t,r:c>0?((e-c)/c)*100:0};}).sort((a,b)=>b.r-a.r);
   document.getElementById("wr-bar2").style.height=Math.max(180,b2.length*40+50)+"px";
   dc("bar2");
@@ -1089,7 +1089,7 @@ function openAssetPopup(t){
   document.getElementById("popDot").style.background=col;
   document.getElementById("popTitle").textContent=t;document.getElementById("popSub").textContent=merged.length+"개 종목";
   document.getElementById("popSummary").innerHTML=`<div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div><div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div><div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
-  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순, 계좌 합산)</div>${merged.map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.세부분류||"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
+  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순, 계좌 합산)</div>${merged.map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.세부분류||"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${Math.round(pct)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
   document.getElementById("popOverlay").classList.add("open");lock();
 }
 function openSubPopup(t,s){
@@ -1100,7 +1100,7 @@ function openSubPopup(t,s){
   document.getElementById("popDot").style.background=col;
   document.getElementById("popTitle").textContent=s;document.getElementById("popSub").textContent=t+" · "+merged.length+"개 종목";
   document.getElementById("popSummary").innerHTML=`<div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtS(te)}</div></div><div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmtS(tp)}</div></div><div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?"pos":"neg"}">${fmtR(tr)}</div></div>`;
-  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순, 계좌 합산)</div>${merged.map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.현재가?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${pct.toFixed(1)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
+  document.getElementById("popBody").innerHTML=`<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순, 계좌 합산)</div>${merged.map((x,i)=>{const pct=te>0?(x.평가금액/te)*100:0;return`<div class="pop-item"><div class="pop-rank">${i+1}</div><div class="pop-info"><div class="pop-nm">${x.상품명}</div><div class="pop-acct">${x.계좌} · ${x.현재가?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</div></div><div class="pop-bar-wrap"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div><div class="pop-pct">${Math.round(pct)}%</div></div><div class="pop-right"><div class="pop-eval">${fmtS(x.평가금액)}</div><div class="pop-rate ${x.손익률>=0?"pos":"neg"}">${fmtR(x.손익률)}</div></div></div>`;}).join("")}`;
   document.getElementById("popOverlay").classList.add("open");lock();
 }
 function closePopup(e){
