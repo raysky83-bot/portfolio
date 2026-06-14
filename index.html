@@ -202,6 +202,7 @@ tr:hover td{background:var(--bg3)}
     </div>
     <div class="tabs">
       <div class="tab on" data-tab="overview" onclick="switchTab(this)">전체현황</div>
+      <div class="tab" data-tab="acctret"  onclick="switchTab(this)">💰 계좌수익률</div>
       <div class="tab" data-tab="history"  onclick="switchTab(this)">📈 자산추이</div>
       <div class="tab" data-tab="table"    onclick="switchTab(this)">종목테이블</div>
     </div>
@@ -214,13 +215,7 @@ tr:hover td{background:var(--bg3)}
         <div class="mcard"><div class="mcard-lbl">평가 손익</div><div class="mcard-val" id="m-pnl">—</div></div>
         <div class="mcard"><div class="mcard-lbl">수익률</div><div class="mcard-val" id="m-rate">—</div></div>
       </div>
-      <!-- 계좌별 순수익률 -->
-      <div id="acct-rate-section" style="margin-bottom:16px;display:none">
-        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;letter-spacing:.5px">
-          ACCOUNT RETURNS · <span style="color:#f5c842">★ 순수익률</span> = 실제 입출금 기준
-        </div>
-        <div class="acct-rate-grid" id="acct-rate-grid"></div>
-      </div>
+
       <div class="chart2">
         <div class="ccard">
           <div class="ccard-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
@@ -241,6 +236,18 @@ tr:hover td{background:var(--bg3)}
       </div>
     </div>
 
+    <!-- 계좌별 수익률 -->
+    <div id="p-acctret" class="panel">
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;letter-spacing:.5px">
+        ACCOUNT RETURNS · <span style="color:#f5c842">★ 순수익률</span> = 실제 입출금 기준
+      </div>
+      <div class="acct-rate-grid" id="acct-rate-grid"></div>
+      <div id="acct-rate-empty" style="display:none;font-size:12px;color:var(--text3);text-align:center;padding:40px 0;font-family:'DM Mono',monospace;line-height:2">
+        💰 계좌현황 시트 데이터가 없습니다<br>
+        구글 시트에 <b>계좌현황</b> 시트를 추가하고<br>
+        Apps Script를 최신 버전으로 재배포하세요
+      </div>
+    </div>
     <!-- 자산 추이 -->
     <div id="p-history" class="panel">
       <div class="ccard" style="margin-bottom:12px">
@@ -630,7 +637,8 @@ function switchTab(el){
 function renderAll(){
   const d=getD();
   renderCards(d);
-  if(tab==="overview"){renderAcctRates();renderTreemap(d);renderBar(d);}
+  if(tab==="overview"){renderTreemap(d);renderBar(d);}
+  if(tab==="acctret")renderAcctRates();
   if(tab==="history")renderHistory();
   if(tab==="table")renderTable(d);
 }
@@ -684,9 +692,14 @@ function toggleCostMode(){
 
 // ── 계좌별 순수익률 ──────────────────────────────────────
 function renderAcctRates(){
-  const sec=document.getElementById('acct-rate-section'),grid=document.getElementById('acct-rate-grid');
-  if(!Object.keys(ACCT_STATS).length){sec.style.display='none';return;}
-  sec.style.display='block';
+  const grid=document.getElementById('acct-rate-grid');
+  const empty=document.getElementById('acct-rate-empty');
+  if(!Object.keys(ACCT_STATS).length){
+    if(grid)grid.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
   const accts=[...new Set(DATA.map(d=>d.계좌))];
   grid.innerHTML=accts.map(acct=>{
     const rows=DATA.filter(d=>d.계좌===acct&&(d.평가금액>0||d.매입금액>0));
