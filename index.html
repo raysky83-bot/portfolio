@@ -71,6 +71,10 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 /* 종목테이블 */
 .tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
 .tbl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.tbl-actions{display:flex;gap:8px}
+.copy-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;font-weight:500;transition:all .2s}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.copy-btn.copied{border-color:var(--pos);color:var(--pos)}
 .tbl-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace}
 .add-btn{background:var(--accent);border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;font-weight:500;transition:opacity .2s}
 .add-btn:hover{opacity:.85}
@@ -298,19 +302,24 @@ tr:hover td{background:var(--bg3)}
       <div class="tbl-wrap">
         <div class="tbl-toolbar">
           <div class="tbl-ttl">전체 종목 현황</div>
-          <button class="add-btn" onclick="openModal('add',null)">＋ 종목 추가</button>
+          <div class="tbl-actions">
+            <button class="copy-btn" id="copyBtn" onclick="copyTableToClipboard()">📋 표 복사</button>
+            <button class="add-btn" onclick="openModal('add',null)">＋ 종목 추가</button>
+          </div>
         </div>
         <table>
           <thead>
             <tr id="tblHead">
-              <th data-col="계좌"    data-type="str" onclick="sortBy(this)">계좌</th>
-              <th data-col="상품명"  data-type="str" onclick="sortBy(this)">종목명</th>
-              <th data-col="자산유형" data-type="str" onclick="sortBy(this)">유형</th>
-              <th data-col="보유수량" data-type="num" onclick="sortBy(this)">수량</th>
-              <th data-col="현재가"  data-type="num" onclick="sortBy(this)">현재가</th>
-              <th data-col="매입금액" data-type="num" onclick="sortBy(this)">매입금액</th>
-              <th data-col="평가금액" data-type="num" onclick="sortBy(this)">평가금액</th>
-              <th data-col="손익률"  data-type="num" onclick="sortBy(this)">손익률</th>
+              <th data-col="계좌"      data-type="str" onclick="sortBy(this)">계좌</th>
+              <th data-col="상품명"    data-type="str" onclick="sortBy(this)">종목명</th>
+              <th data-col="보유수량"  data-type="num" onclick="sortBy(this)">수량</th>
+              <th data-col="자산유형"  data-type="str" onclick="sortBy(this)">유형</th>
+              <th data-col="평균매입가" data-type="num" onclick="sortBy(this)">매입가</th>
+              <th data-col="현재가"    data-type="num" onclick="sortBy(this)">현재단가</th>
+              <th data-col="매입금액"  data-type="num" onclick="sortBy(this)">매입금액</th>
+              <th data-col="평가금액"  data-type="num" onclick="sortBy(this)">평가금액</th>
+              <th data-col="평가손익"  data-type="num" onclick="sortBy(this)">평가손익</th>
+              <th data-col="손익률"    data-type="num" onclick="sortBy(this)">손익률</th>
               <th style="cursor:default;text-align:center">관리</th>
             </tr>
           </thead>
@@ -860,20 +869,61 @@ function renderTable(d){
   _tableRows=rows;
   document.getElementById("tbody").innerHTML=rows.map((x,i)=>{
     const col=getTypeColor(x.자산유형);
+    const pnl=x.평가손익!=null?x.평가손익:(x.평가금액-x.매입금액);
+    const pnlCls=pnl>=0?'pos':'neg';
     return`<tr>
       <td><span class="tag t-${x.계좌}">${x.계좌}</span></td>
-      <td>${x.상품명}</td>
-      <td><span class="tag" style="background:${col}18;color:${col};border:1px solid ${col}30">${x.자산유형||"—"}</span></td>
+      <td title="${x.상품명}">${displayName(x.상품명)}</td>
       <td>${qF(x.보유수량)}</td>
+      <td><span class="tag" style="background:${col}18;color:${col};border:1px solid ${col}30">${x.자산유형||"—"}</span></td>
+      <td>${x.평균매입가!=null?Math.round(x.평균매입가).toLocaleString("ko-KR"):"—"}</td>
       <td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR"):"—"}</td>
-      <td>${fmt(x.매입금액)}</td>
-      <td>${x.평가금액>0?fmt(x.평가금액):"—"}</td>
-      <td class="${x.평가손익>=0?'pos':'neg'}">${fmtR(x.손익률)}</td>
+      <td>${fmtN(x.매입금액)}</td>
+      <td>${x.평가금액>0?fmtN(x.평가금액):"—"}</td>
+      <td class="${pnlCls}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</td>
+      <td class="${x.손익률>=0?'pos':'neg'}">${fmtR(x.손익률)}</td>
       <td style="text-align:center"><button class="edit-btn" onclick="openModalByIdx(${i})">✏️ 수정</button></td>
     </tr>`;
   }).join("");
 }
 function openModalByIdx(i){openModal("edit",_tableRows[i]);}
+
+// ── 표 → 엑셀 복사 (TSV) ────────────────────────────────
+async function copyTableToClipboard(){
+  const headers=["계좌","종목명","수량","유형","매입가","현재단가","매입금액(만원)","평가금액(만원)","평가손익(만원)","손익률(%)"];
+  const toM=n=>n==null?"":Math.round(n/10000);
+  const lines=[headers.join("\t")];
+  _tableRows.forEach(x=>{
+    const pnl=x.평가손익!=null?x.평가손익:(x.평가금액-x.매입금액);
+    lines.push([
+      x.계좌,
+      displayName(x.상품명),
+      x.보유수량==null?"":qF(x.보유수량),
+      x.자산유형||"",
+      x.평균매입가!=null?Math.round(x.평균매입가):"",
+      x.현재가!=null?Math.round(x.현재가):"",
+      toM(x.매입금액),
+      x.평가금액>0?toM(x.평가금액):"",
+      toM(pnl),
+      x.손익률!=null?x.손익률.toFixed(1):""
+    ].join("\t"));
+  });
+  const tsv=lines.join("\n");
+  const btn=document.getElementById("copyBtn");
+  try{
+    await navigator.clipboard.writeText(tsv);
+    btn.classList.add("copied");btn.textContent="✅ 복사됨";
+    setTimeout(()=>{btn.classList.remove("copied");btn.textContent="📋 표 복사";},1800);
+  }catch(e){
+    // fallback
+    const ta=document.createElement("textarea");
+    ta.value=tsv;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();
+    document.execCommand("copy");document.body.removeChild(ta);
+    btn.classList.add("copied");btn.textContent="✅ 복사됨";
+    setTimeout(()=>{btn.classList.remove("copied");btn.textContent="📋 표 복사";},1800);
+  }
+}
 
 // ── 종목 추가/수정 모달 ──────────────────────────────────
 function openModal(mode,item){
