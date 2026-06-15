@@ -32,8 +32,8 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;user-select:none;font-weight:500}
 .chip.on{border-color:var(--accent);background:#6c6cff18;color:var(--accent)}
-.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:fit-content;flex-wrap:wrap}
-.tab{padding:6px 16px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;font-weight:500}
+.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:100%;overflow-x:auto}
+.tab{padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;font-weight:500;white-space:nowrap;flex:1;text-align:center}
 .tab.on{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px #0004}
 .mcard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
 .mcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
@@ -220,8 +220,8 @@ tr:hover td{background:var(--bg3)}
     <div class="tabs">
       <div class="tab on" data-tab="overview" onclick="switchTab(this)">전체현황</div>
       <div class="tab" data-tab="acctret"  onclick="switchTab(this)">💰 계좌수익률</div>
-      <div class="tab" data-tab="history"  onclick="switchTab(this)">📈 자산추이</div>
       <div class="tab" data-tab="table"    onclick="switchTab(this)">종목테이블</div>
+      <div class="tab" data-tab="history"  onclick="switchTab(this)">📈 자산추이</div>
     </div>
 
     <!-- 전체현황 -->
