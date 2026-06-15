@@ -501,7 +501,8 @@ let _tableRows=[],histDays=180,histMode='current';
 
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
-const fmt=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원";
+const fmt=n=>n==null?"—":fmtN(n);  // 만원단위 통일
+const fmtW=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원"; // 원단위(단가용)
 const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(1)+"%";
 // fmtN: 0,000만원 형식 (천단위 콤마 + 만원단위)
 const fmtN=n=>{if(n==null)return"—";const sign=n<0?"-":"";const a=Math.abs(n);const m=Math.round(a/10000);return sign+m.toLocaleString("ko-KR")+"만원";};
@@ -1141,8 +1142,8 @@ function renderTable(d){
       <td title="${x.상품명}">${displayName(x.상품명)}</td>
       <td>${qF(x.보유수량)}</td>
       <td><span class="tag" style="background:${col}18;color:${col};border:1px solid ${col}30">${x.자산유형||"—"}</span></td>
-      <td>${x.평균매입가!=null?Math.round(x.평균매입가).toLocaleString("ko-KR"):"—"}</td>
-      <td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR"):"—"}</td>
+      <td>${x.평균매입가!=null?Math.round(x.평균매입가).toLocaleString("ko-KR")+"원":"—"}</td>
+      <td>${x.현재가!=null?Math.round(x.현재가).toLocaleString("ko-KR")+"원":"—"}</td>
       <td>${fmtN(x.매입금액)}</td>
       <td>${x.평가금액>0?fmtN(x.평가금액):"—"}</td>
       <td class="${pnlCls}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</td>
