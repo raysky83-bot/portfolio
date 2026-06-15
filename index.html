@@ -61,13 +61,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .bar-table tr{border-bottom:1px solid var(--border)}
 .bar-table tr:last-child{border-bottom:none}
 .bar-table td{padding:5px 4px;vertical-align:middle;text-align:right}
-.bt-name{width:82px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px!important;text-align:left}
-.bt-bar-cell{width:80px;text-align:left}
+.bt-name{font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px!important;text-align:left;min-width:80px;max-width:100px}
+.bt-bar-cell{width:72px;text-align:left;padding-left:6px!important}
 .bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .bt-bar-fill{height:100%;border-radius:3px;transition:width .4s}
-.bt-eval{width:80px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
-.bt-pnl{width:72px;font-size:10px;font-family:'DM Mono',monospace}
-.bt-rate{width:52px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
+.bt-eval{width:76px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);text-align:right}
+.bt-pnl{width:72px;font-size:11px;font-family:'DM Mono',monospace;text-align:right}
+.bt-rate{width:50px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;text-align:right}
 /* 종목테이블 */
 .tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
 .tbl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
@@ -216,6 +216,26 @@ tr:hover td{background:var(--bg3)}
 .hist-stat-item:not(:last-child){border-right:1px solid var(--border)}
 .hist-stat-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px}
 .hist-stat-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+
+/* 종목 세부 팝업 */
+#stockPopOverlay{z-index:1500}
+.stock-pop-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.spk{background:var(--bg3);border-radius:10px;padding:10px 12px}
+.spk-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.3px;margin-bottom:4px}
+.spk-val{font-size:14px;font-weight:600;font-family:'DM Mono',monospace}
+.spk-sub{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.stock-pop-row{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border)}
+.stock-pop-row:last-child{border-bottom:none}
+.stock-pop-lbl{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.stock-pop-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;text-align:right}
+.stock-pop-accounts{padding:12px 18px;border-bottom:1px solid var(--border)}
+.stock-pop-acct-ttl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.stock-pop-acct-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:8px;padding:8px 12px;margin-bottom:6px}
+.stock-pop-acct-row:last-child{margin-bottom:0}
+.spa-left{display:flex;align-items:center;gap:8px}
+.spa-right{text-align:right}
+.spa-eval{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.spa-rate{font-size:10px;font-family:'DM Mono',monospace;margin-top:1px}
 </style>
 </head>
 <body>
@@ -471,6 +491,24 @@ tr:hover td{background:var(--bg3)}
   </div>
 </div>
 
+<!-- 종목 세부 팝업 -->
+<div class="popup-overlay" id="stockPopOverlay" onclick="closeStockPopup(event)">
+  <div class="popup-sheet" id="stockPopSheet">
+    <div class="popup-drag"></div>
+    <div class="popup-head">
+      <div class="popup-title-wrap">
+        <div class="popup-dot" id="stockPopDot"></div>
+        <div>
+          <div class="popup-title" id="stockPopTitle">—</div>
+          <div class="popup-sub" id="stockPopSub">—</div>
+        </div>
+      </div>
+      <div class="popup-close" onclick="closeStockPopup(event)">✕</div>
+    </div>
+    <div style="overflow-y:auto;flex:1" id="stockPopBody"></div>
+  </div>
+</div>
+
 <script>
 const API="https://script.google.com/macros/s/AKfycbwWi3r9lvpR4Slhbd7czTnFVjNcfkC64MMDH6pV04VMqXhxYbCa2qE4lXpR5PSFF2TK7Q/exec";
 const CASH_KW=["예수금","현금성자산","미국달러","달러"];
@@ -651,8 +689,7 @@ function renderBar(d){
     const bc=x.손익률>=0?'#3ecf8e':'#ff6b6b';
     const rc=x.손익률>=0?'pos':'neg';
     const pnl=x.평가금액-x.매입금액;
-    return`<tr>
-      <td class="bt-name" title="${x.상품명}">${shortName(x.상품명)}</td>
+    return`<tr style="cursor:pointer" onclick="openStockPopup('${x.상품명.replace(/'/g,"\\'")}')">\n      <td class="bt-name" title="${x.상품명}">${shortName(x.상품명)}</td>
       <td class="bt-eval">${fmtN(x.평가금액)}</td>
       <td class="bt-pnl ${rc}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</td>
       <td class="bt-rate ${rc}">${fmtR(x.손익률)}</td>
@@ -1280,6 +1317,127 @@ if(popSheet){
   popSheet.addEventListener("touchstart",e=>{tsY=e.touches[0].clientY;},{passive:true});
   popSheet.addEventListener("touchend",e=>{if(e.changedTouches[0].clientY-tsY>100)closePopup({target:document.getElementById("popOverlay")});},{passive:true});
 }
+
+// ── 종목 세부 팝업 ───────────────────────────────────────
+function openStockPopup(nm){
+  // 해당 종목의 모든 계좌 데이터
+  const allRows = DATA.filter(x=>x.상품명===nm&&(x.평가금액>0||x.매입금액>0));
+  if(!allRows.length) return;
+
+  // 합산
+  const totalEv  = allRows.reduce((s,x)=>s+x.평가금액,0);
+  const totalCo  = allRows.reduce((s,x)=>s+x.매입금액,0);
+  const totalPnl = totalEv - totalCo;
+  const totalR   = totalCo>0?(totalPnl/totalCo)*100:0;
+  const totalQty = allRows.reduce((s,x)=>s+(x.보유수량||0),0);
+
+  // 대표 데이터 (첫번째 or 가장 큰 계좌)
+  const rep = [...allRows].sort((a,b)=>b.평가금액-a.평가금액)[0];
+  const 현재가  = rep.현재가;
+  const 평균매입가= totalCo>0&&totalQty>0?(totalCo/totalQty):rep.평균매입가;
+  const 자산유형 = rep.자산유형;
+  const col     = getTypeColor(자산유형);
+
+  // 전일대비: 현재가와 평균매입가로 추산 (실제 전일종가 없으므로 근사)
+  // 히스토리에서 전일 수익률로 역산
+  const prevEv = HIST.length>=2
+    ? HIST[HIST.length-2]?.총평가금액
+    : null;
+
+  // 표시명
+  const dispNm = displayName(nm);
+
+  document.getElementById("stockPopDot").style.background = col;
+  document.getElementById("stockPopTitle").textContent = dispNm;
+  document.getElementById("stockPopSub").textContent =
+    `${자산유형||"—"} · ${allRows.length}개 계좌 보유`;
+
+  // KPI 4개
+  const kpiHTML = `<div class="stock-pop-kpi">
+    <div class="spk">
+      <div class="spk-lbl">총 평가금액</div>
+      <div class="spk-val neu">${fmtN(totalEv)}</div>
+      <div class="spk-sub">매입 ${fmtN(totalCo)}</div>
+    </div>
+    <div class="spk">
+      <div class="spk-lbl">평가손익</div>
+      <div class="spk-val ${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${fmtN(totalPnl)}</div>
+      <div class="spk-sub">${fmtR(totalR)}</div>
+    </div>
+    <div class="spk">
+      <div class="spk-lbl">총 보유수량</div>
+      <div class="spk-val neu">${totalQty>0?totalQty.toLocaleString("ko-KR")+"주":"—"}</div>
+      <div class="spk-sub">${allRows.length}개 계좌</div>
+    </div>
+    <div class="spk">
+      <div class="spk-lbl">평균 매입단가</div>
+      <div class="spk-val neu">${평균매입가!=null?Math.round(평균매입가).toLocaleString("ko-KR")+"원":"—"}</div>
+      <div class="spk-sub">가중평균</div>
+    </div>
+  </div>`;
+
+  // 단가 정보
+  const priceRows = [
+    {lbl:"현재단가",    val:현재가!=null?Math.round(현재가).toLocaleString("ko-KR")+"원":"—", cls:"neu"},
+    {lbl:"평균 매입단가", val:평균매입가!=null?Math.round(평균매입가).toLocaleString("ko-KR")+"원":"—", cls:"neu"},
+    {lbl:"단가 손익",   val:현재가!=null&&평균매입가!=null
+      ? `${현재가>=평균매입가?'+':''}${Math.round(현재가-평균매입가).toLocaleString("ko-KR")}원`
+      :"—",
+      cls:현재가!=null&&평균매입가!=null?(현재가>=평균매입가?'pos':'neg'):'neu'},
+    {lbl:"단가 수익률", val:현재가!=null&&평균매입가!=null&&평균매입가>0
+      ? fmtR((현재가-평균매입가)/평균매입가*100)
+      :"—",
+      cls:현재가!=null&&평균매입가!=null?(현재가>=평균매입가?'pos':'neg'):'neu'},
+  ].map(r=>`<div class="stock-pop-row">
+    <span class="stock-pop-lbl">${r.lbl}</span>
+    <span class="stock-pop-val ${r.cls}">${r.val}</span>
+  </div>`).join('');
+
+  // 계좌별 보유 현황
+  const acctHTML = allRows.length>1 ? `
+    <div class="stock-pop-accounts">
+      <div class="stock-pop-acct-ttl">계좌별 보유 현황</div>
+      ${allRows.map(x=>{
+        const pnl=x.평가금액-x.매입금액;
+        const col2=ACCT_COL[x.계좌]||'#888';
+        return`<div class="stock-pop-acct-row">
+          <div class="spa-left">
+            <span class="tag t-${x.계좌}">${x.계좌}</span>
+            <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${x.보유수량!=null?x.보유수량.toLocaleString("ko-KR")+"주":""}</span>
+          </div>
+          <div class="spa-right">
+            <div class="spa-eval">${fmtN(x.평가금액)}</div>
+            <div class="spa-rate ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmtN(pnl)} · ${fmtR(x.손익률)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  document.getElementById("stockPopBody").innerHTML =
+    kpiHTML + acctHTML +
+    `<div style="padding-bottom:4px">${priceRows}</div>`;
+
+  document.getElementById("stockPopOverlay").classList.add("open");
+  lock();
+}
+
+function closeStockPopup(e){
+  const overlay=document.getElementById("stockPopOverlay");
+  if(e&&e.target!==overlay&&!e.target.classList.contains("popup-close"))return;
+  overlay.classList.remove("open");
+  unlock();
+}
+
+// 스와이프 닫기
+const stockPopSheet=document.getElementById("stockPopSheet");
+if(stockPopSheet){
+  let spY=0;
+  stockPopSheet.addEventListener("touchstart",e=>{spY=e.touches[0].clientY;},{passive:true});
+  stockPopSheet.addEventListener("touchend",e=>{
+    if(e.changedTouches[0].clientY-spY>100)closeStockPopup({target:document.getElementById("stockPopOverlay")});
+  },{passive:true});
+}
+
 
 loadData();
 </script>
