@@ -192,6 +192,18 @@ tr:hover td{background:var(--bg3)}
   .chart2{grid-template-columns:1fr 1fr}
   .acct-rate-list{max-width:600px;margin:0 auto 16px}
 }
+
+/* 자산추이 업그레이드 */
+.hist-mode-toggle{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:3px}
+.hist-mode-btn{padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--text3);font-family:'DM Mono',monospace;border:none;background:transparent;transition:all .2s;white-space:nowrap}
+.hist-mode-btn.on{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px #0004}
+.hist-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.hist-kpi{background:var(--bg3);border-radius:10px;padding:11px 13px}
+.hist-kpi-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.4px;margin-bottom:5px}
+.hist-kpi-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace}
+.hist-kpi-sub{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+@media(min-width:480px){.hist-kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:640px){.hist-kpi-grid{grid-template-columns:repeat(6,1fr)}}
 </style>
 </head>
 <body>
@@ -272,23 +284,37 @@ tr:hover td{background:var(--bg3)}
     </div>
     <!-- 자산 추이 -->
     <div id="p-history" class="panel">
+      <!-- 컨트롤바 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="hist-ctrl" style="margin-bottom:0">
+          <button class="hist-btn" onclick="histRange(30,this)">1M</button>
+          <button class="hist-btn" onclick="histRange(90,this)">3M</button>
+          <button class="hist-btn on" onclick="histRange(180,this)">6M</button>
+          <button class="hist-btn" onclick="histRange(365,this)">1Y</button>
+          <button class="hist-btn" onclick="histRange(0,this)">전체</button>
+        </div>
+        <div class="hist-mode-toggle">
+          <button class="hist-mode-btn on" id="hm-current" onclick="setHistMode('current',this)">보유기준</button>
+          <button class="hist-mode-btn" id="hm-pure" onclick="setHistMode('pure',this)">★ 순수익</button>
+        </div>
+      </div>
+      <!-- KPI 카드 -->
+      <div class="hist-kpi-grid" id="hist-kpi"></div>
+      <!-- 자산 성장 차트 -->
       <div class="ccard" style="margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="ccard-ttl" style="margin-bottom:0">자산 성장 추이</div>
-          <div class="hist-ctrl" style="margin-bottom:0">
-            <button class="hist-btn" onclick="histRange(30,this)">1M</button>
-            <button class="hist-btn" onclick="histRange(90,this)">3M</button>
-            <button class="hist-btn on" onclick="histRange(180,this)">6M</button>
-            <button class="hist-btn" onclick="histRange(365,this)">1Y</button>
-            <button class="hist-btn" onclick="histRange(0,this)">전체</button>
+        <div class="ccard-ttl" id="hist-chart-ttl">자산 성장 추이</div>
+        <div style="position:relative;height:280px"><canvas id="c-hist"></canvas></div>
+      </div>
+      <!-- 수익률 추이 차트 -->
+      <div class="ccard">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="ccard-ttl" style="margin-bottom:0" id="hist-rate-ttl">수익률 추이</div>
+          <div style="display:flex;gap:10px;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3)">
+            <span><span style="display:inline-block;width:10px;height:2px;background:#3ecf8e;vertical-align:middle;margin-right:4px"></span>보유기준</span>
+            <span id="hist-rate-legend2" style="display:none"><span style="display:inline-block;width:10px;height:2px;background:#f5c842;vertical-align:middle;margin-right:4px"></span>순수익</span>
           </div>
         </div>
-        <div id="hist-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
-        <div style="position:relative;height:260px"><canvas id="c-hist"></canvas></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">수익률 추이</div>
-        <div style="position:relative;height:180px"><canvas id="c-hist-rate"></canvas></div>
+        <div style="position:relative;height:200px"><canvas id="c-hist-rate"></canvas></div>
       </div>
       <div id="hist-empty" class="hist-empty" style="display:none">
         📭 히스토리 데이터가 없습니다<br>
@@ -435,7 +461,7 @@ function buildTypeColors(data){
 let DATA=[],HIST=[],ALIAS=new Map(),ACCT_STATS={},sel=new Set(["all"]),tab="overview",CH={};
 let costMode='current'; // 'current'=보유기준 | 'actual'=실제입금기준
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
-let _tableRows=[],histDays=180;
+let _tableRows=[],histDays=180,histMode='current';
 
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
@@ -822,36 +848,221 @@ function flipAcctCard(acct){
 }
 
 // ── 자산 추이 ────────────────────────────────────────────
-function histRange(days,el){histDays=days;document.querySelectorAll(".hist-btn").forEach(b=>b.classList.remove("on"));el.classList.add("on");renderHistory();}
+function histRange(days,el){
+  histDays=days;
+  document.querySelectorAll(".hist-btn").forEach(b=>b.classList.remove("on"));
+  el.classList.add("on");
+  renderHistory();
+}
+function setHistMode(mode,el){
+  histMode=mode;
+  document.querySelectorAll(".hist-mode-btn").forEach(b=>b.classList.remove("on"));
+  el.classList.add("on");
+  renderHistory();
+}
+
 function renderHistory(){
   const empty=document.getElementById("hist-empty");
   if(!HIST.length){
     empty.style.display="block";
-    document.getElementById("c-hist").parentElement.style.display="none";
-    document.getElementById("hist-summary").innerHTML="";return;
+    document.getElementById("c-hist").closest(".ccard").style.display="none";
+    document.getElementById("hist-kpi").innerHTML="";
+    return;
   }
-  empty.style.display="none";document.getElementById("c-hist").parentElement.style.display="block";
+  empty.style.display="none";
+  document.getElementById("c-hist").closest(".ccard").style.display="block";
+
+  // 기간 필터
   let rows=HIST;
-  if(histDays>0){const cut=new Date();cut.setDate(cut.getDate()-histDays);rows=HIST.filter(r=>r.날짜>=cut.toISOString().slice(0,10));}
+  if(histDays>0){
+    const cut=new Date();cut.setDate(cut.getDate()-histDays);
+    rows=HIST.filter(r=>r.날짜>=cut.toISOString().slice(0,10));
+  }
   if(!rows.length)rows=HIST.slice(-30);
-  const labels=rows.map(r=>r.날짜.slice(5)),evals=rows.map(r=>r.총평가금액),rates=rows.map(r=>r.수익률);
-  const first=rows[0],last=rows[rows.length-1],chg=last.총평가금액-first.총평가금액,chgR=first.총평가금액>0?(chg/first.총평가금액)*100:0;
-  document.getElementById("hist-summary").innerHTML=`
-    <div class="ps-item"><div class="ps-lbl">기간 변화</div><div class="ps-val ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${fmtS(chg)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">기간 수익률</div><div class="ps-val ${chgR>=0?'pos':'neg'}">${fmtR(chgR)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">최고 평가</div><div class="ps-val neu">${fmtS(Math.max(...evals))}</div></div>`;
+
+  const labels  = rows.map(r=>r.날짜.slice(5));
+  const evals   = rows.map(r=>r.총평가금액);
+  const costs   = rows.map(r=>r.총매입금액);
+  const rates   = rows.map(r=>r.수익률);
+  const first=rows[0], last=rows[rows.length-1];
+
+  // 순수익률 계산 (입금 기준)
+  // ACCT_STATS에서 전체 입금액 합산
+  const totalIn  = Object.values(ACCT_STATS).reduce((s,a)=>s+(a.총입금원금||0),0);
+  const totalOut = Object.values(ACCT_STATS).reduce((s,a)=>s+(a.총출금액||0),0);
+  const hasPure  = totalIn>0;
+  // 순수익률 = (평가 + 출금 - 입금) / 입금 * 100
+  const pureRates = hasPure
+    ? rows.map(r=>((r.총평가금액+totalOut-totalIn)/totalIn)*100)
+    : [];
+
+  // ── KPI 카드 ────────────────────────────────────────
+  const maxEval   = Math.max(...evals);
+  const minEval   = Math.min(...evals);
+  const chg       = last.총평가금액-first.총평가금액;
+  const chgR      = first.총평가금액>0?(chg/first.총평가금액)*100:0;
+  const peakIdx   = evals.indexOf(maxEval);
+  // MDD: peak-to-trough from the evals
+  let mdd=0, peak=evals[0];
+  evals.forEach(v=>{if(v>peak)peak=v;const dd=peak>0?(v-peak)/peak*100:0;if(dd<mdd)mdd=dd;});
+
+  const lastRate  = rates[rates.length-1];
+  const firstRate = rates[0];
+  const lastPure  = hasPure?pureRates[pureRates.length-1]:null;
+
+  const isPure = histMode==='pure' && hasPure;
+  document.getElementById("hist-chart-ttl").textContent = isPure
+    ? "자산 성장 추이 (★ 순수익 기준 오버레이)"
+    : "자산 성장 추이";
+  document.getElementById("hist-rate-ttl").textContent = isPure
+    ? "수익률 추이 (보유기준 vs 순수익률)"
+    : "수익률 추이";
+  const legend2=document.getElementById("hist-rate-legend2");
+  if(legend2) legend2.style.display = isPure&&hasPure?'inline':'none';
+
+  document.getElementById("hist-kpi").innerHTML=[
+    {lbl:"기간 평가변화", val:(chg>=0?'+':'')+fmtN(chg), cls:chg>=0?'pos':'neg', sub:`${first.날짜.slice(5)} → ${last.날짜.slice(5)}`},
+    {lbl:"기간 수익률",   val:fmtR(chgR),                 cls:chgR>=0?'pos':'neg', sub:`시작 ${fmtR(firstRate)} → 현재 ${fmtR(lastRate)}`},
+    {lbl:"최고 평가금액", val:fmtN(maxEval),               cls:'neu',  sub:rows[peakIdx]?.날짜.slice(5)},
+    {lbl:"최저 평가금액", val:fmtN(minEval),               cls:'neu',  sub:'기간 내'},
+    {lbl:"MDD (최대낙폭)",val:mdd.toFixed(1)+'%',          cls:mdd<0?'neg':'neu', sub:'고점 대비 최대 하락'},
+    {lbl:"★ 순수익률",   val:hasPure?fmtR(lastPure):'미설정', cls:hasPure&&lastPure>=0?'pos':hasPure?'neg':'',
+      sub:hasPure?`입금 ${fmtN(totalIn)}·출금 ${fmtN(totalOut)}`:'계좌현황 시트 필요'},
+  ].map(k=>`<div class="hist-kpi">
+    <div class="hist-kpi-lbl">${k.lbl}</div>
+    <div class="hist-kpi-val ${k.cls}">${k.val}</div>
+    <div class="hist-kpi-sub">${k.sub}</div>
+  </div>`).join('');
+
+  // ── 자산 성장 차트 ───────────────────────────────────
+  const pureAbsLine = hasPure
+    ? rows.map(r=>r.총평가금액+totalOut-totalIn)  // 순수익 절대값 기준선 (입금과의 차이)
+    : [];
+
   dc("hist");
-  CH.hist=new Chart(document.getElementById("c-hist"),{type:"line",data:{labels,datasets:[
-    {label:"총평가금액",data:evals,borderColor:"#6c6cff",backgroundColor:"#6c6cff18",fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,borderWidth:2},
-    {label:"총매입금액",data:rows.map(r=>r.총매입금액),borderColor:"#ffffff25",backgroundColor:"transparent",fill:false,tension:.3,pointRadius:0,borderWidth:1,borderDash:[4,4]}
-  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtS(c.raw)}`}}},
-    scales:{x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},y:{ticks:{color:"#55556a",font:{size:9},callback:v=>fmtS(v)},grid:{color:"#ffffff06"}}}}});
+  const histDatasets=[
+    {
+      label:"총평가금액",
+      data:evals,
+      borderColor:"#6c6cff",
+      backgroundColor:"#6c6cff15",
+      fill:true,tension:.3,pointRadius:0,pointHoverRadius:5,borderWidth:2.5
+    },
+    {
+      label:"매입원금(보유)",
+      data:costs,
+      borderColor:"#ffffff20",
+      backgroundColor:"transparent",
+      fill:false,tension:.3,pointRadius:0,borderWidth:1,borderDash:[5,5]
+    },
+  ];
+  if(isPure && hasPure){
+    // 입금원금 기준선
+    histDatasets.push({
+      label:"실제 입금원금",
+      data:rows.map(()=>totalIn),
+      borderColor:"#f5c84250",
+      backgroundColor:"transparent",
+      fill:false,tension:0,pointRadius:0,borderWidth:1.5,borderDash:[3,4]
+    });
+    // 순수익 영역 (평가 - 입금)
+    histDatasets.push({
+      label:"★ 순손익",
+      data:pureAbsLine,
+      borderColor:"#f5c842",
+      backgroundColor:"#f5c84215",
+      fill:{target:2,above:"#f5c84220",below:"#ff6b6b15"},
+      tension:.3,pointRadius:0,borderWidth:1.5
+    });
+  }
+  CH.hist=new Chart(document.getElementById("c-hist"),{
+    type:"line",
+    data:{labels,datasets:histDatasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:t=>`📅 ${rows[t[0].dataIndex]?.날짜||''}`,
+          label:ctx=>{
+            const v=ctx.raw;
+            if(ctx.dataset.label==="총평가금액")
+              return ` 평가금액: ${fmtN(v)} (${fmtR(rates[ctx.dataIndex])})`;
+            if(ctx.dataset.label==="매입원금(보유)")
+              return ` 보유 원금: ${fmtN(v)}`;
+            if(ctx.dataset.label==="실제 입금원금")
+              return ` 입금 원금: ${fmtN(v)}`;
+            if(ctx.dataset.label==="★ 순손익")
+              return ` 순손익: ${v>=0?'+':''}${fmtN(v)} (${fmtR(pureRates[ctx.dataIndex])})`;
+            return ` ${ctx.dataset.label}: ${fmtN(v)}`;
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},
+        y:{ticks:{color:"#55556a",font:{size:9},callback:v=>fmtS(v)},grid:{color:"#ffffff08"}}
+      }
+    }
+  });
+
+  // ── 수익률 추이 차트 ─────────────────────────────────
+  const rateDatasets=[{
+    label:"보유기준 수익률",
+    data:rates,
+    borderColor:"#3ecf8e",
+    backgroundColor:"#3ecf8e12",
+    fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,borderWidth:2
+  }];
+  if(hasPure){
+    rateDatasets.push({
+      label:"★ 순수익률",
+      data:pureRates,
+      borderColor:"#f5c842",
+      backgroundColor:"transparent",
+      fill:false,tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[4,3]
+    });
+  }
   dc("histr");
-  CH.histr=new Chart(document.getElementById("c-hist-rate"),{type:"line",data:{labels,datasets:[{label:"수익률",data:rates,borderColor:"#3ecf8e",backgroundColor:"#3ecf8e18",fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` 수익률: ${fmtR(c.raw)}`}}},
-      scales:{x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},y:{ticks:{color:"#55556a",font:{size:9},callback:v=>v+"%"},grid:{color:"#ffffff06"}}}}});
+  CH.histr=new Chart(document.getElementById("c-hist-rate"),{
+    type:"line",
+    data:{labels,datasets:rateDatasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:t=>`📅 ${rows[t[0].dataIndex]?.날짜||''}`,
+          label:ctx=>{
+            if(ctx.dataset.label==="보유기준 수익률")
+              return ` 보유기준: ${fmtR(ctx.raw)}`;
+            return ` ★ 순수익률: ${fmtR(ctx.raw)}`;
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{color:"#55556a",font:{size:9},maxTicksLimit:8},grid:{color:"#ffffff06"}},
+        y:{
+          ticks:{color:"#55556a",font:{size:9},callback:v=>v.toFixed(1)+'%'},
+          grid:{color:"#ffffff08"},
+          // 0% 기준선 강조
+          afterDataLimits:axis=>{
+            const range=axis.max-axis.min;
+            axis.max=axis.max+range*0.05;
+            axis.min=axis.min-range*0.05;
+          }
+        }
+      },
+      // 0% 기준선
+      plugins:{
+        annotation:{annotations:{zeroline:{
+          type:"line",yMin:0,yMax:0,
+          borderColor:"#ffffff30",borderWidth:1,borderDash:[4,4]
+        }}}
+      }
+    }
+  });
 }
 
 // ── 종목 테이블 ──────────────────────────────────────────
