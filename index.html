@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>포트폴리오 대시보드</title>
+<title>자산 포트폴리오</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap');
@@ -60,14 +60,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .bar-table{width:100%;border-collapse:collapse}
 .bar-table tr{border-bottom:1px solid var(--border)}
 .bar-table tr:last-child{border-bottom:none}
-.bar-table td{padding:5px 4px;vertical-align:middle;text-align:right}
-.bt-name{font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px!important;text-align:left;min-width:80px;max-width:100px}
-.bt-bar-cell{width:72px;text-align:left;padding-left:6px!important}
+.bar-table td{padding:5px 4px;vertical-align:middle;text-align:right!important}
+.bt-name{font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px!important;text-align:left!important;min-width:80px;max-width:100px}
+.bt-bar-cell{width:72px;text-align:left!important;padding-left:6px!important}
 .bt-bar-wrap{height:10px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .bt-bar-fill{height:100%;border-radius:3px;transition:width .4s}
-.bt-eval{width:76px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);text-align:right}
-.bt-pnl{width:72px;font-size:11px;font-family:'DM Mono',monospace;text-align:right}
-.bt-rate{width:50px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;text-align:right}
+.bt-eval{width:76px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);text-align:right!important}
+.bt-pnl{width:72px;font-size:11px;font-family:'DM Mono',monospace;text-align:right!important}
+.bt-rate{width:50px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;text-align:right!important}
 /* 종목테이블 */
 .tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
 .tbl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
