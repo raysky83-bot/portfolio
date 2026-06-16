@@ -364,31 +364,30 @@ tr:hover td{background:var(--bg3)}
 
     <!-- 전체현황 -->
     <div id="p-overview" class="panel on">
-      <div class="mcard-grid" style="grid-template-columns:1fr;gap:12px">
-        <!-- Hero 카드: 총 평가금액 -->
-        <div class="hero-card">
-          <div class="hero-lbl">총 평가금액</div>
-          <div class="hero-val neu count-anim" id="m-eval">—</div>
-          <div class="hero-sub-row">
-            <div class="hero-pnl" id="m-pnl">—</div>
-            <div id="m-rate-badge"></div>
-            <div class="hero-cnt" id="m-eval-sub"></div>
+      <!-- 전체현황: 한 줄 배치 -->
+      <div class="hero-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <!-- 총 평가금액 -->
+          <div style="flex:1;min-width:0">
+            <div class="hero-lbl">총 평가금액</div>
+            <div class="hero-val neu count-anim" id="m-eval">—</div>
+            <div style="margin-top:10px">
+              <div class="hero-pnl" id="m-pnl">—</div>
+            </div>
+            <div class="hero-cnt" style="margin-top:6px" id="m-eval-sub"></div>
           </div>
-        </div>
-        <!-- 하단 2칸 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="mcard" id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none">
-            <div class="mcard-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 6px;border-radius:4px;background:#ffffff10;color:var(--text3);vertical-align:middle;font-weight:600">보유기준</span></div>
-            <div class="mcard-val neu count-anim" id="m-cost">—</div>
-            <div class="mcard-sub" id="m-cost-sub">탭 → 실제 입금기준</div>
-          </div>
-          <div class="mcard">
-            <div class="mcard-lbl">수익률</div>
-            <div class="mcard-val count-anim" id="m-rate">—</div>
-            <div class="mcard-sub" id="m-rate-sub"></div>
+          <!-- 구분선 -->
+          <div style="width:1px;background:var(--border2);align-self:stretch;flex-shrink:0"></div>
+          <!-- 투자 원금 -->
+          <div id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none;flex:1;min-width:0">
+            <div class="hero-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 6px;border-radius:4px;background:#ffffff10;color:var(--text3);vertical-align:middle;font-weight:600">보유기준</span></div>
+            <div class="hero-val neu count-anim" id="m-cost">—</div>
+            <div class="hero-cnt" style="margin-top:10px" id="m-cost-sub">탭 → 실제 입금기준</div>
           </div>
         </div>
       </div>
+      <span id="m-rate" style="display:none"></span>
+      <span id="m-rate-sub" style="display:none"></span>
 
       <div class="chart2">
         <div class="ccard">
@@ -918,12 +917,21 @@ function renderCards(d){
   }
 
   const tp=ev-baseCost,tr=baseCost>0?(tp/baseCost)*100:0;
+  // 원금 카드
   document.getElementById("m-cost").textContent=fmt(baseCost);
   document.getElementById("cost-mode-badge").textContent=baseLabel;
-  document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"탭하면 실제 입금 기준으로 전환";
-  document.getElementById("cost-card").style.borderColor=costMode==="actual"?"#f5c84250":"";
-  const pe=document.getElementById("m-pnl");pe.textContent=(tp>=0?"+":"")+fmt(tp);pe.className="mcard-val "+(tp>=0?"pos":"neg");
-  const re=document.getElementById("m-rate");re.textContent=fmtR(tr);re.className="mcard-val "+(tr>=0?"pos":"neg");
+  document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"탭 → 실제 입금기준";
+  document.getElementById("cost-card").style.borderColor=costMode==="actual"?"var(--accent)":"";
+  // 손익 + 수익률 괄호 한 줄 표시
+  const rateCls=tr>=10?"pos-hi":tr>=0?"pos":"neg";
+  const pnlEl=document.getElementById("m-pnl");
+  pnlEl.innerHTML=
+    `<span class="${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmt(tp)}</span>`+
+    `<span style="font-size:var(--fs-md);font-weight:600;margin-left:8px;font-family:'DM Mono',monospace;opacity:.9" class="${rateCls}">(${fmtR(tr)})</span>`;
+  pnlEl.className="hero-pnl";
+  // 숨김 요소 (다른 곳 참조용)
+  const re=document.getElementById("m-rate");
+  if(re){re.textContent=fmtR(tr);re.className=rateCls;}
 }
 
 function toggleCostMode(){
