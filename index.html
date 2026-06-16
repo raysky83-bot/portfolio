@@ -3,14 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>자산 포트폴리오</title>
+<title>포트폴리오 대시보드</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap');
-:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--border:#ffffff0f;--border2:#ffffff18;--text:#e8e8f0;--text2:#9090a8;--text3:#55556a;--accent:#6c6cff;--pos:#3ecf8e;--neg:#ff6b6b}
+:root{
+  /* 배경 */
+  --bg:#080810;--bg2:#0f0f1a;--bg3:#161623;--bg4:#1c1c2e;
+  /* 테두리 */
+  --border:#ffffff0c;--border2:#ffffff16;--border3:#ffffff22;
+  /* 텍스트 */
+  --text:#f0f0f8;--text2:#8888a8;--text3:#4a4a6a;--text4:#2e2e4a;
+  /* 강조 */
+  --accent:#7c6fff;--accent2:#5a4fff;
+  /* 수익 색상 단계 */
+  --pos-hi:#00ff88;--pos:#3ecf8e;--pos-lo:#2a8a62;
+  --neg:#ff5555;--neg-lo:#cc3333;
+  /* 그림자 */
+  --shadow:0 4px 24px #00000040;--shadow-sm:0 2px 8px #00000030;
+  /* 반경 통일 */
+  --r-sm:8px;--r-md:14px;--r-lg:20px;
+  /* 폰트 크기 통일 */
+  --fs-xs:9px;--fs-sm:11px;--fs-md:13px;--fs-lg:16px;--fs-xl:22px;--fs-2xl:28px;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,#6c6cff12 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,#3ecf8e0a 0%,transparent 50%);pointer-events:none}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 70% 40% at 15% 0%,#7c6fff18 0%,transparent 55%),radial-gradient(ellipse 50% 35% at 85% 100%,#3ecf8e10 0%,transparent 50%),radial-gradient(ellipse 40% 30% at 60% 50%,#5a4fff08 0%,transparent 60%);pointer-events:none}
 #app{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 16px 60px}
 .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border2)}
 .hdr-left{display:flex;align-items:center;gap:10px}
@@ -30,20 +48,20 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .filter-wrap{margin-bottom:16px}
 .filter-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:7px;letter-spacing:.5px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;user-select:none;font-weight:500}
-.chip.on{border-color:var(--accent);background:#6c6cff18;color:var(--accent)}
-.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:100%;overflow-x:auto}
-.tab{padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;font-weight:500;white-space:nowrap;flex:1;text-align:center}
-.tab.on{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px #0004}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:var(--fs-sm);cursor:pointer;transition:all .2s;user-select:none;font-weight:500}
+.chip.on{border-color:var(--accent);background:linear-gradient(135deg,#7c6fff15,#5a4fff20);color:var(--accent);box-shadow:0 0 12px #7c6fff20}
+.tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:4px;width:100%;overflow-x:auto}
+.tab{padding:8px 12px;border-radius:10px;font-size:var(--fs-sm);cursor:pointer;color:var(--text3);transition:all .25s;user-select:none;font-weight:500;white-space:nowrap;flex:1;text-align:center}
+.tab.on{background:linear-gradient(135deg,var(--bg3),var(--bg4));color:var(--text);box-shadow:0 2px 8px #00000050;font-weight:600}
 .mcard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-.mcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
-.mcard-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;margin-bottom:8px}
-.mcard-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace}
-.mcard-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace}
-.pos{color:var(--pos)!important}.neg{color:var(--neg)!important}.neu{color:var(--text)!important}
+.mcard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:16px;transition:border-color .2s,transform .15s;box-shadow:var(--shadow-sm)}
+.mcard-lbl{font-size:var(--fs-xs);color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:10px}
+.mcard-val{font-size:var(--fs-xl);font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-.5px;line-height:1.1}
+.mcard-sub{font-size:var(--fs-xs);color:var(--text3);margin-top:5px;font-family:'DM Mono',monospace}
+.pos{color:var(--pos)!important}.neg{color:var(--neg)!important}.neu{color:var(--text)!important}.pos-hi{color:var(--pos-hi)!important}
 .chart2{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
-.ccard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
-.ccard-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'DM Mono',monospace;margin-bottom:12px}
+.ccard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:18px;box-shadow:var(--shadow-sm)}
+.ccard-ttl{font-size:var(--fs-xs);color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:'DM Mono',monospace;margin-bottom:14px;font-weight:600}
 /* 히스토리 */
 .hist-ctrl{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 .hist-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace}
@@ -90,7 +108,7 @@ td:nth-child(2){text-align:left;color:var(--text);font-weight:500;max-width:160p
 td:nth-child(3){text-align:left}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
-.tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;font-family:'DM Mono',monospace}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:var(--fs-xs);font-weight:700;font-family:'DM Mono',monospace;letter-spacing:.3px}
 .t-연금저축{background:#6c6cff18;color:#9090ff;border:1px solid #6c6cff30}
 .t-ISA{background:#3ecf8e18;color:#3ecf8e;border:1px solid #3ecf8e30}
 .t-IRP{background:#f5c84218;color:#f5c842;border:1px solid #f5c84230}
@@ -236,6 +254,78 @@ tr:hover td{background:var(--bg3)}
 .spa-right{text-align:right}
 .spa-eval{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
 .spa-rate{font-size:10px;font-family:'DM Mono',monospace;margin-top:1px}
+
+/* ── 애니메이션 ── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes countUp{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulse-pos{0%,100%{box-shadow:0 0 0 0 #3ecf8e30}50%{box-shadow:0 0 0 6px #3ecf8e00}}
+
+.panel.on{animation:fadeIn .3s ease}
+.mcard{animation:fadeInUp .35s ease both}
+.mcard:nth-child(1){animation-delay:.05s}
+.mcard:nth-child(2){animation-delay:.1s}
+.mcard:nth-child(3){animation-delay:.15s}
+.mcard:nth-child(4){animation-delay:.2s}
+
+/* 숫자 카운트업 효과 */
+.count-anim{animation:countUp .4s cubic-bezier(.34,1.56,.64,1) both}
+
+/* 수익률 뱃지 */
+.rate-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:var(--fs-sm);font-weight:700;font-family:'DM Mono',monospace}
+.rate-badge.pos{background:#3ecf8e18;color:var(--pos);border:1px solid #3ecf8e30}
+.rate-badge.pos-hi{background:#00ff8818;color:#00ff88;border:1px solid #00ff8830}
+.rate-badge.neg{background:#ff555518;color:var(--neg);border:1px solid #ff555530}
+
+/* 카드 hover 효과 */
+.mcard:hover{border-color:var(--border3);transform:translateY(-1px);box-shadow:0 6px 20px #00000050}
+.ccard:hover{border-color:var(--border3)}
+.arcard:hover{transform:translateY(-1px);box-shadow:0 6px 20px #00000050}
+
+/* 히어로 카드 (전체현황 총 평가금액) */
+.hero-card{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border3);border-radius:var(--r-lg);padding:20px;grid-column:1/-1;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#7c6fff08 0%,transparent 60%);pointer-events:none}
+.hero-lbl{font-size:var(--fs-xs);color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:'DM Mono',monospace;margin-bottom:8px}
+.hero-val{font-size:var(--fs-2xl);font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1}
+.hero-sub-row{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.hero-pnl{font-size:var(--fs-lg);font-weight:600;font-family:'DM Mono',monospace}
+.hero-cnt{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace}
+
+/* 수익률 바 개선 */
+.bt-bar-wrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative}
+.bt-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.34,1.2,.64,1)}
+
+/* 트리맵 개선 */
+.tm-cell-inner{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px;text-align:center;background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 100%)}
+
+/* KPI 카드 개선 */
+.hist-kpi{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px 14px;transition:all .2s}
+.hist-kpi:hover{border-color:var(--border3);background:var(--bg3)}
+.hist-kpi-lbl{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;margin-bottom:6px;font-weight:600}
+.hist-kpi-val{font-size:var(--fs-lg);font-weight:700;font-family:'DM Mono',monospace;line-height:1}
+.hist-kpi-sub{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px}
+
+/* 팝업 KPI 개선 */
+.spk{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px 14px}
+.spk-lbl{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:5px;letter-spacing:.3px;font-weight:600}
+.spk-val{font-size:var(--fs-lg);font-weight:700;font-family:'DM Mono',monospace}
+.spk-sub{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px}
+
+/* 헤더 개선 */
+.hdr-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#7c6fff,#3ecf8e);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px #7c6fff30}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.hdr-sub{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px}
+
+/* 새로고침 버튼 */
+.sync-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--accent);padding:8px 14px;border-radius:var(--r-sm);font-size:var(--fs-sm);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;white-space:nowrap;font-weight:600}
+.sync-btn:hover{background:var(--bg4);border-color:var(--accent);box-shadow:0 0 12px #7c6fff20}
+
+/* 바 테이블 행 hover */
+.bar-table tr{transition:background .15s}
+.bar-table tr:hover td{background:var(--bg3)!important}
+.bar-table tr{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -274,11 +364,30 @@ tr:hover td{background:var(--bg3)}
 
     <!-- 전체현황 -->
     <div id="p-overview" class="panel on">
-      <div class="mcard-grid">
-        <div class="mcard"><div class="mcard-lbl">총 평가금액</div><div class="mcard-val neu" id="m-eval">—</div><div class="mcard-sub" id="m-eval-sub"></div></div>
-        <div class="mcard" id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none"><div class="mcard-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 5px;border-radius:3px;background:#ffffff12;color:var(--text3);vertical-align:middle">보유기준</span></div><div class="mcard-val neu" id="m-cost">—</div><div class="mcard-sub" id="m-cost-sub" style="font-size:9px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace">탭하면 실제 입금 기준으로 전환</div></div>
-        <div class="mcard"><div class="mcard-lbl">평가 손익</div><div class="mcard-val" id="m-pnl">—</div></div>
-        <div class="mcard"><div class="mcard-lbl">수익률</div><div class="mcard-val" id="m-rate">—</div></div>
+      <div class="mcard-grid" style="grid-template-columns:1fr;gap:12px">
+        <!-- Hero 카드: 총 평가금액 -->
+        <div class="hero-card">
+          <div class="hero-lbl">총 평가금액</div>
+          <div class="hero-val neu count-anim" id="m-eval">—</div>
+          <div class="hero-sub-row">
+            <div class="hero-pnl" id="m-pnl">—</div>
+            <div id="m-rate-badge"></div>
+            <div class="hero-cnt" id="m-eval-sub"></div>
+          </div>
+        </div>
+        <!-- 하단 2칸 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="mcard" id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none">
+            <div class="mcard-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 6px;border-radius:4px;background:#ffffff10;color:var(--text3);vertical-align:middle;font-weight:600">보유기준</span></div>
+            <div class="mcard-val neu count-anim" id="m-cost">—</div>
+            <div class="mcard-sub" id="m-cost-sub">탭 → 실제 입금기준</div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-lbl">수익률</div>
+            <div class="mcard-val count-anim" id="m-rate">—</div>
+            <div class="mcard-sub" id="m-rate-sub"></div>
+          </div>
+        </div>
       </div>
 
       <div class="chart2">
@@ -630,7 +739,20 @@ function squarify(items,x,y,w,h){
 }
 
 function rateColor(r){
-  if(r>=10)return'#56d364';if(r>=5)return'#3ecf8e';if(r>=0)return'#2a9d6e';if(r>=-5)return'#e05a5a';return'#ff3b3b';
+  if(r>=20) return'#00ff88';
+  if(r>=10) return'#3ecf8e';
+  if(r>=5)  return'#2eb87a';
+  if(r>=0)  return'#1f8a5a';
+  if(r>=-5) return'#e05a5a';
+  if(r>=-10)return'#cc3333';
+  return'#ff2222';
+}
+// 수익률 기반 텍스트 색상
+function rateTxtColor(r){
+  if(r>=10) return'var(--pos-hi)';
+  if(r>=0)  return'var(--pos)';
+  if(r>=-5) return'var(--neg)';
+  return'var(--neg-lo)';
 }
 
 // ── 트리맵 렌더 (자산유형별) ─────────────────────────────
@@ -686,7 +808,7 @@ function renderBar(d){
   const maxR=Math.max(...v.map(x=>Math.abs(x.손익률)),0.01);
   const rows=v.map(x=>{
     const bw=Math.min(100,(Math.abs(x.손익률)/maxR)*100).toFixed(1);
-    const bc=x.손익률>=0?'#3ecf8e':'#ff6b6b';
+    const bc=x.손익률>=20?'#00ff88':x.손익률>=10?'#3ecf8e':x.손익률>=5?'#2eb87a':x.손익률>=0?'#1f8a5a':x.손익률>=-5?'#cc3333':'#ff2222';
     const rc=x.손익률>=0?'pos':'neg';
     const pnl=x.평가금액-x.매입금액;
     return`<tr style="cursor:pointer" onclick="openStockPopup('${x.상품명.replace(/'/g,"\\'")}')">\n      <td class="bt-name" title="${x.상품명}">${shortName(x.상품명)}</td>
