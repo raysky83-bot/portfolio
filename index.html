@@ -162,7 +162,7 @@ tr:hover td{background:var(--bg3)}
 .popup-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
 .ps-item{background:var(--bg3);border-radius:8px;padding:10px 12px}
 .ps-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:'DM Mono',monospace;margin-bottom:4px}
-.ps-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.ps-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap}
 .popup-body{overflow-y:auto;padding:12px 18px 20px;flex:1}
 .popup-section-ttl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:'DM Mono',monospace;margin-bottom:8px}
 .pop-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border-radius:10px;margin-bottom:8px}
@@ -204,7 +204,7 @@ tr:hover td{background:var(--bg3)}
 .arcard-stat{text-align:center}
 .arcard-stat:not(:last-child){border-right:1px solid var(--border)}
 .arcard-stat-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px}
-.arcard-stat-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text)}
+.arcard-stat-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);white-space:nowrap}
 @media(min-width:640px){
   .mcard-grid{grid-template-columns:repeat(4,1fr)}
   .chart2{grid-template-columns:1fr 1fr}
@@ -284,12 +284,12 @@ tr:hover td{background:var(--bg3)}
 .arcard:hover{transform:translateY(-1px);box-shadow:0 6px 20px #00000050}
 
 /* 히어로 카드 (전체현황 총 평가금액) */
-.hero-card{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border3);border-radius:var(--r-lg);padding:20px;grid-column:1/-1;position:relative;overflow:hidden}
+.hero-card{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border3);border-radius:var(--r-md);padding:16px 18px;grid-column:1/-1;position:relative;overflow:hidden}
 .hero-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#7c6fff08 0%,transparent 60%);pointer-events:none}
-.hero-lbl{font-size:var(--fs-xs);color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:'DM Mono',monospace;margin-bottom:8px}
-.hero-val{font-size:var(--fs-2xl);font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1}
-.hero-sub-row{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
-.hero-pnl{font-size:var(--fs-lg);font-weight:600;font-family:'DM Mono',monospace}
+.hero-lbl{font-size:var(--fs-xs);color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:6px}
+.hero-val{font-size:clamp(20px,5vw,26px);font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-.5px;line-height:1.1;white-space:nowrap}
+.hero-sub-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:nowrap}
+.hero-pnl{font-size:clamp(13px,3.5vw,17px);font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap;display:flex;align-items:baseline;gap:6px;flex-wrap:nowrap}
 .hero-cnt{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace}
 
 /* 수익률 바 개선 */
@@ -309,7 +309,7 @@ tr:hover td{background:var(--bg3)}
 /* 팝업 KPI 개선 */
 .spk{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px 14px}
 .spk-lbl{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:5px;letter-spacing:.3px;font-weight:600}
-.spk-val{font-size:var(--fs-lg);font-weight:700;font-family:'DM Mono',monospace}
+.spk-val{font-size:var(--fs-lg);font-weight:700;font-family:'DM Mono',monospace;white-space:nowrap}
 .spk-sub{font-size:var(--fs-xs);color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px}
 
 /* 헤더 개선 */
@@ -382,7 +382,7 @@ tr:hover td{background:var(--bg3)}
           <div id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none;flex:1;min-width:0">
             <div class="hero-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 6px;border-radius:4px;background:#ffffff10;color:var(--text3);vertical-align:middle;font-weight:600">보유기준</span></div>
             <div class="hero-val neu count-anim" id="m-cost">—</div>
-            <div class="hero-cnt" style="margin-top:10px" id="m-cost-sub">탭 → 실제 입금기준</div>
+            <div class="hero-cnt" style="margin-top:6px" id="m-cost-sub">탭 → 실제 입금기준</div>
           </div>
         </div>
       </div>
@@ -652,6 +652,8 @@ const fmtW=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원"; // 원�
 const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(1)+"%";
 // fmtN: 0,000만원 형식 (천단위 콤마 + 만원단위)
 const fmtN=n=>{if(n==null)return"—";const sign=n<0?"-":"";const a=Math.abs(n);const m=Math.round(a/10000);return sign+m.toLocaleString("ko-KR")+"만원";};
+// Hero용: 만원을 작은 글씨로
+const fmtNH=n=>{if(n==null)return"—";const sign=n<0?"-":"";const a=Math.abs(n);const m=Math.round(a/10000);return sign+m.toLocaleString("ko-KR")+'<span style="font-size:.45em;font-weight:500;margin-left:2px;vertical-align:middle;opacity:.8">만원</span>';};
 const fmtS=n=>{if(n==null)return"—";const a=Math.abs(n);return a>=100000000?(n<0?"-":"")+(Math.round(a/10000000)/10)+"억":a>=10000?(n<0?"-":"")+Math.round(a/10000)+"만":Math.round(n).toLocaleString("ko-KR");};
 const qF=n=>n==null?"—":(Number.isInteger(n)?n.toLocaleString("ko-KR"):n.toFixed(4));
 const dc=k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
@@ -902,7 +904,7 @@ window.addEventListener('resize',()=>{if(tab==="overview")renderTreemap(getD());
 function renderCards(d){
   const ev=d.filter(x=>x.평가금액>0).reduce((s,x)=>s+x.평가금액,0);
   const co=d.filter(x=>x.매입금액>0).reduce((s,x)=>s+x.매입금액,0);
-  document.getElementById("m-eval").textContent=fmt(ev);
+  document.getElementById("m-eval").innerHTML=fmtNH(ev);
   document.getElementById("m-eval-sub").textContent=mergeByName(d.filter(x=>x.평가금액>0&&!isCash(x.상품명))).length+"개 종목";
 
   // 원금 기준 결정
@@ -918,7 +920,9 @@ function renderCards(d){
 
   const tp=ev-baseCost,tr=baseCost>0?(tp/baseCost)*100:0;
   // 원금 카드
-  document.getElementById("m-cost").textContent=fmt(baseCost);
+  const costValEl=document.getElementById("m-cost");
+  costValEl.innerHTML=fmtNH(baseCost);
+  costValEl.className="hero-val neu count-anim";
   document.getElementById("cost-mode-badge").textContent=baseLabel;
   document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"탭 → 실제 입금기준";
   document.getElementById("cost-card").style.borderColor=costMode==="actual"?"var(--accent)":"";
@@ -926,8 +930,8 @@ function renderCards(d){
   const rateCls=tr>=10?"pos-hi":tr>=0?"pos":"neg";
   const pnlEl=document.getElementById("m-pnl");
   pnlEl.innerHTML=
-    `<span class="${tp>=0?"pos":"neg"}">${tp>=0?"+":""}${fmt(tp)}</span>`+
-    `<span style="font-size:var(--fs-md);font-weight:600;margin-left:8px;font-family:'DM Mono',monospace;opacity:.9" class="${rateCls}">(${fmtR(tr)})</span>`;
+    `<span class="${tp>=0?"pos":"neg"}" style="white-space:nowrap">${tp>=0?"+":""}${fmtNH(tp)}</span>`+
+    `<span style="font-size:.85em;font-weight:600;font-family:'DM Mono',monospace;opacity:.9;white-space:nowrap" class="${rateCls}">(${fmtR(tr)})</span>`;
   pnlEl.className="hero-pnl";
   // 숨김 요소 (다른 곳 참조용)
   const re=document.getElementById("m-rate");
@@ -978,15 +982,15 @@ function renderAcctRates(){
     <div class="acct-summary-row">
       <span class="acct-summary-lbl">총 평가금액</span>
     </div>
-    <div class="acct-summary-val neu">${fmt(totalEv)}</div>
+    <div class="acct-summary-val neu">${fmtNH(totalEv)}</div>
     <div class="acct-summary-sub">
       <div class="acct-summary-item">
         <div class="acct-summary-item-lbl">투자 원금</div>
-        <div class="acct-summary-item-val neu">${fmtN(totalCo)}</div>
+        <div class="acct-summary-item-val neu">${fmtNH(totalCo)}</div>
       </div>
       <div class="acct-summary-item">
         <div class="acct-summary-item-lbl">평가 손익</div>
-        <div class="acct-summary-item-val ${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${fmtN(totalPnl)}</div>
+        <div class="acct-summary-item-val ${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${fmtNH(totalPnl)}</div>
       </div>
       <div class="acct-summary-item">
         <div class="acct-summary-item-lbl">수익률</div>
@@ -1027,15 +1031,15 @@ function renderAcctRates(){
       <div class="arcard-bottom">
         <div class="arcard-stat">
           <div class="arcard-stat-lbl">평가금액</div>
-          <div class="arcard-stat-val">${fmtN(ev)}</div>
+          <div class="arcard-stat-val">${fmtNH(ev)}</div>
         </div>
         <div class="arcard-stat">
           <div class="arcard-stat-lbl">${flipped?'입금 원금':'매입 원금'}</div>
-          <div class="arcard-stat-val">${fmtN(dispBase)}</div>
+          <div class="arcard-stat-val">${fmtNH(dispBase)}</div>
         </div>
         <div class="arcard-stat">
           <div class="arcard-stat-lbl">평가손익</div>
-          <div class="arcard-stat-val ${dispPnl>=0?'pos':'neg'}">${dispPnl>=0?'+':''}${fmtN(dispPnl)}</div>
+          <div class="arcard-stat-val ${dispPnl>=0?'pos':'neg'}">${dispPnl>=0?'+':''}${fmtNH(dispPnl)}</div>
         </div>
       </div>
     </div>`;
@@ -1123,7 +1127,7 @@ function renderHistory(){
   const dispRate = isPure&&pureRate!=null?pureRate:curRate;
   const dispBase = isPure?totalIn:curCost;
 
-  document.getElementById("hist-total-eval").textContent = fmt(curEval);
+  document.getElementById("hist-total-eval").innerHTML = fmtNH(curEval);
   const pnlEl = document.getElementById("hist-total-pnl");
   pnlEl.textContent = `${dispPnl>=0?'+':''}${fmt(dispPnl)} (${fmtR(dispRate)})`;
   pnlEl.className = "hist-header-pnl "+(dispPnl>=0?'pos':'neg');
@@ -1412,8 +1416,8 @@ function openAssetPopup(t){
   document.getElementById("popTitle").textContent=t;
   document.getElementById("popSub").textContent=merged.length+"개 종목";
   document.getElementById("popSummary").innerHTML=`
-    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtN(te)}</div></div>
-    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?'pos':'neg'}">${tp>=0?'+':''}${fmtN(Math.abs(tp))}</div></div>
+    <div class="ps-item"><div class="ps-lbl">평가금액</div><div class="ps-val neu">${fmtNH(te)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">평가손익</div><div class="ps-val ${tp>=0?'pos':'neg'}">${tp>=0?'+':''}${fmtNH(Math.abs(tp))}</div></div>
     <div class="ps-item"><div class="ps-lbl">수익률</div><div class="ps-val ${tr>=0?'pos':'neg'}">${fmtR(tr)}</div></div>`;
   document.getElementById("popBody").innerHTML=
     `<div class="popup-section-ttl" style="margin-bottom:10px">구성 종목 (평가금액 순 · 별칭 표시)</div>`+
@@ -1428,8 +1432,8 @@ function openAssetPopup(t){
           <div class="pop-acct">${x.계좌} · ${Math.round(pct)}%</div>
         </div>
         <div class="pop-right">
-          <div class="pop-eval">${fmtN(x.평가금액)}</div>
-          <div class="pop-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmtN(Math.abs(pnl))}</div>
+          <div class="pop-eval">${fmtNH(x.평가금액)}</div>
+          <div class="pop-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmtNH(Math.abs(pnl))}</div>
           <div class="pop-rate ${x.손익률>=0?'pos':'neg'}">${fmtR(x.손익률)}</div>
         </div>
       </div>`;
@@ -1486,12 +1490,12 @@ function openStockPopup(nm){
   const kpiHTML = `<div class="stock-pop-kpi">
     <div class="spk">
       <div class="spk-lbl">총 평가금액</div>
-      <div class="spk-val neu">${fmtN(totalEv)}</div>
+      <div class="spk-val neu">${fmtNH(totalEv)}</div>
       <div class="spk-sub">매입 ${fmtN(totalCo)}</div>
     </div>
     <div class="spk">
       <div class="spk-lbl">평가손익</div>
-      <div class="spk-val ${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${fmtN(totalPnl)}</div>
+      <div class="spk-val ${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${fmtNH(totalPnl)}</div>
       <div class="spk-sub">${fmtR(totalR)}</div>
     </div>
     <div class="spk">
@@ -1536,7 +1540,7 @@ function openStockPopup(nm){
             <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${x.보유수량!=null?x.보유수량.toLocaleString("ko-KR")+"주":""}</span>
           </div>
           <div class="spa-right">
-            <div class="spa-eval">${fmtN(x.평가금액)}</div>
+            <div class="spa-eval">${fmtNH(x.평가금액)}</div>
             <div class="spa-rate ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmtN(pnl)} · ${fmtR(x.손익률)}</div>
           </div>
         </div>`;
