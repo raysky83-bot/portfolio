@@ -326,6 +326,23 @@ tr:hover td{background:var(--bg3)}
 .bar-table tr:hover td{background:var(--bg3)!important}
 .bar-table tr{cursor:pointer}
 
+
+/* 자산유형 보기 모드 토글 */
+.asset-view-toggle{display:flex;gap:3px;background:var(--bg3);border-radius:8px;padding:3px}
+.asset-view-btn{padding:5px 11px;border-radius:6px;font-size:10px;cursor:pointer;color:var(--text3);font-family:'DM Mono',monospace;border:none;background:transparent;transition:all .2s;white-space:nowrap;font-weight:600}
+.asset-view-btn.on{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px #0004}
+/* 도넛 + 리스트 뷰 */
+.donut-view-wrap{display:flex;flex-direction:column;gap:16px}
+.donut-canvas-wrap{position:relative;width:100%;max-width:220px;height:220px;margin:0 auto}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-center-lbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px}
+.donut-center-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;margin-top:2px}
+.donut-list{display:flex;flex-direction:column;gap:2px}
+.donut-list-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-radius:8px;cursor:pointer;transition:background .15s}
+.donut-list-row:hover{background:var(--bg3)}
+.donut-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.donut-list-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.donut-list-pct{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;width:46px;text-align:right;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -391,8 +408,15 @@ tr:hover td{background:var(--bg3)}
 
       <div class="chart2">
         <div class="ccard">
-          <div class="ccard-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="ccard-ttl" style="margin-bottom:0" id="asset-card-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
+            <div class="asset-view-toggle">
+              <button class="asset-view-btn on" id="av-tree" onclick="setAssetView('tree',this)">▦ 트리맵</button>
+              <button class="asset-view-btn" id="av-donut" onclick="setAssetView('donut',this)">◔ 비중</button>
+            </div>
+          </div>
           <div id="treemap-wrap" class="treemap-wrap" style="height:300px"></div>
+          <div id="donut-wrap" class="donut-view-wrap" style="display:none"></div>
         </div>
         <div class="ccard">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -643,7 +667,7 @@ function buildTypeColors(data){
 let DATA=[],HIST=[],ALIAS=new Map(),ACCT_STATS={},sel=new Set(["all"]),tab="overview",CH={};
 let costMode='current'; // 'current'=보유기준 | 'actual'=실제입금기준
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
-let _tableRows=[],histDays=180,histMode='current';
+let _tableRows=[],histDays=180,histMode='current',assetView='tree';
 
 const isCash=n=>CASH_KW.some(k=>n&&n.includes(k));
 const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof v==="number")return isNaN(v)?null:v;const s=String(v).replace(/[,₩원\s%]/g,"").trim();const n=parseFloat(s);return isNaN(n)?null:n;};
@@ -787,6 +811,94 @@ function renderTreemap(d){
   }).join('');
 }
 
+
+// ── 보기 모드 토글 (트리맵 ↔ 비중 도넛) ──────────────────
+function setAssetView(mode,el){
+  assetView=mode;
+  document.querySelectorAll('.asset-view-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  const treeWrap=document.getElementById('treemap-wrap');
+  const donutWrap=document.getElementById('donut-wrap');
+  const ttl=document.getElementById('asset-card-ttl');
+  if(mode==='tree'){
+    treeWrap.style.display='block';
+    donutWrap.style.display='none';
+    ttl.textContent='자산유형별 비중 (탭하면 구성종목 보기)';
+    renderTreemap(getD());
+  }else{
+    treeWrap.style.display='none';
+    donutWrap.style.display='block';
+    ttl.textContent='자산유형별 비중';
+    renderDonutView(getD());
+  }
+}
+
+// ── 도넛 + 리스트 뷰 (심플 비중 보기) ─────────────────────
+function renderDonutView(d){
+  const wrap=document.getElementById('donut-wrap');if(!wrap)return;
+  const nc=d.filter(x=>x.평가금액>0);
+  const types=[...new Set(nc.map(x=>x.자산유형).filter(Boolean))];
+  const te=nc.reduce((s,x)=>s+x.평가금액,0);
+
+  if(!te||!types.length){
+    wrap.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:40px 0">데이터 없음</div>';
+    return;
+  }
+
+  const typeData=types.map(t=>{
+    const g=nc.filter(x=>x.자산유형===t);
+    const ev=g.reduce((s,x)=>s+x.평가금액,0);
+    return{type:t,eval:ev,pct:te>0?(ev/te)*100:0,col:getTypeColor(t)};
+  }).sort((a,b)=>b.eval-a.eval);
+
+  wrap.innerHTML=`
+    <div class="donut-canvas-wrap">
+      <canvas id="c-asset-donut"></canvas>
+      <div class="donut-center">
+        <div class="donut-center-lbl">총 평가금액</div>
+        <div class="donut-center-val">${fmtN(te)}</div>
+      </div>
+    </div>
+    <div class="donut-list">
+      ${typeData.map(x=>`
+        <div class="donut-list-row" onclick="openAssetPopup('${x.type.replace(/'/g,"\\'")}')">
+          <span class="donut-dot" style="background:${x.col}"></span>
+          <span class="donut-list-name">${x.type}</span>
+          <span class="donut-list-pct" style="color:${x.col}">${x.pct.toFixed(1)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  dc('assetDonut');
+  CH.assetDonut=new Chart(document.getElementById('c-asset-donut'),{
+    type:'doughnut',
+    data:{
+      labels:typeData.map(x=>x.type),
+      datasets:[{
+        data:typeData.map(x=>x.eval),
+        backgroundColor:typeData.map(x=>x.col),
+        borderColor:'var(--bg2)',
+        borderWidth:2,
+        hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      cutout:'68%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          label:ctx=>{
+            const pct=te>0?(ctx.raw/te*100).toFixed(1):0;
+            return ` ${ctx.label}: ${fmtN(ctx.raw)} (${pct}%)`;
+          }
+        }}
+      }
+    }
+  });
+}
+
 // ── 수익률 바 테이블 ──────────────────────────────────────
 function barSort(col){
   barSortDir=barSortCol===col?barSortDir*-1:(col==="종목명"?1:-1);
@@ -842,7 +954,10 @@ async function loadData(){
     if(!Object.keys(ACCT_STATS).length) console.warn('[대시보드] ACCT_STATS 없음 — Apps Script를 최신 버전으로 재배포하고 계좌현황 시트를 추가하세요');
     DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
       const nm=String(r["상품명"]||"").trim(),cost=toN(r["매입금액"])??0;
-      let ev=toN(r["평가금액"])??0;if(isCash(nm))ev=Math.abs(cost);
+      let ev=toN(r["평가금액"])??0;
+      // 평가금액이 없거나 0인데 자산유형이 "현금"인 경우에만 매입금액으로 대체
+      // (종목명 키워드 방식은 CMA 일반종목을 잘못 현금으로 분류할 수 있어 제거)
+      if((ev===0||ev===null)&&String(r["자산유형"]||"").trim()==="현금")ev=Math.abs(cost);
       return{계좌:String(r["계좌"]||"").trim(),상품명:nm,자산유형:String(r["자산유형"]||"").trim(),세부분류:String(r["세부분류"]||"").trim(),
         보유수량:toN(r["보유수량"]),현재가:toN(r["현재가"]),평균매입가:toN(r["평균매입가"]),
         매입금액:cost,평가금액:ev,평가손익:toN(r["평가손익"])??0,손익률:toN(r["손익률"])??0};
@@ -893,12 +1008,16 @@ function switchTab(el){
 function renderAll(){
   const d=getD();
   renderCards(d);
-  if(tab==="overview"){renderTreemap(d);renderBar(d);}
+  if(tab==="overview"){
+    if(assetView==='tree') renderTreemap(d);
+    else renderDonutView(d);
+    renderBar(d);
+  }
   if(tab==="acctret")renderAcctRates();
   if(tab==="history")renderHistory();
   if(tab==="table")renderTable(d);
 }
-window.addEventListener('resize',()=>{if(tab==="overview")renderTreemap(getD());});
+window.addEventListener('resize',()=>{if(tab==="overview"&&assetView==='tree')renderTreemap(getD());});
 
 // ── 상단 요약 카드 ───────────────────────────────────────
 function renderCards(d){
