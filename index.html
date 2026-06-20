@@ -811,43 +811,41 @@ function renderTreemap(d){
   wrap.style.height=H+'px';
   const cells=squarify(typeData.map(x=>({...x,value:x.eval})),0,0,W,H);
 
-  // 셀 크기 단계: xs(라벨만,줄임표) / sm(라벨+%) / md(+평가금액) / lg(+손익+수익률)
+  // 셀 크기 단계 — 실제 텍스트 블록 높이를 기준으로 엄격하게 분류 (겹침/잘림 방지)
+  // xs: 라벨만(1줄)  sm: 라벨+%·수익률(2줄)  md: +평가금액(3줄)  lg: 전체정보(4줄)
   wrap.innerHTML=cells.map(c=>{
-    const tier = (c.w<48||c.h<34) ? 'xs'
-               : (c.w<78||c.h<54) ? 'sm'
-               : (c.w<110||c.h<78) ? 'md'
+    const tier = (c.h<26 || c.w<44) ? 'xs'
+               : (c.h<46 || c.w<64) ? 'sm'
+               : (c.h<66 || c.w<92) ? 'md'
                : 'lg';
     const bg = rateColor(c.rate);
-    const tc = treemapTextColors(bg); // 배경 밝기 기반 텍스트 색상 세트
+    const tc = treemapTextColors(bg);
 
-    // 라벨: 칸이 좁으면 유형명만, 한 줄, 말줄임
-    const nameFs = tier==='lg'?13 : tier==='md'?12 : tier==='sm'?10.5 : 9.5;
-    const labelHtml = `<div style="font-size:${nameFs}px;font-weight:700;color:${tc.main};text-shadow:${tc.shadow};line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${c.type}</div>`;
+    const nameFs = tier==='lg'?13 : tier==='md'?11.5 : tier==='sm'?10 : 9;
+    const labelHtml = `<div style="font-size:${nameFs}px;font-weight:700;color:${tc.main};text-shadow:${tc.shadow};line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;flex-shrink:0">${c.type}</div>`;
 
     let extraHtml = '';
     if(tier==='sm'){
-      extraHtml = `<div style="font-size:9.5px;font-weight:700;margin-top:2px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtR(c.rate)}</div>`;
+      extraHtml = `<div style="font-size:9px;font-weight:700;margin-top:2px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${Math.round(c.pct)}%·${fmtR(c.rate)}</div>`;
     } else if(tier==='md'){
       extraHtml = `
-        <div style="font-size:10px;color:${tc.sub};margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
-        <div style="font-size:12px;font-weight:700;margin-top:3px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${fmtR(c.rate)}</div>`;
+        <div style="font-size:9.5px;color:${tc.sub};margin-top:2px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
+        <div style="font-size:11.5px;font-weight:700;margin-top:2px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${fmtR(c.rate)}</div>`;
     } else if(tier==='lg'){
       extraHtml = `
-        <div style="font-size:11px;color:${tc.sub};margin-top:4px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
-        <div style="font-size:10.5px;margin-top:3px;font-family:'DM Mono',monospace;color:${c.pnl>=0?tc.posSub:tc.negSub};white-space:nowrap;text-shadow:${tc.shadow}">${c.pnl>=0?'+':''}${fmtN(c.pnl)}</div>
-        <div style="font-size:14px;font-weight:700;margin-top:5px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${fmtR(c.rate)}</div>`;
+        <div style="font-size:10.5px;color:${tc.sub};margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
+        <div style="font-size:10px;margin-top:2px;font-family:'DM Mono',monospace;color:${c.pnl>=0?tc.posSub:tc.negSub};white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${c.pnl>=0?'+':''}${fmtN(c.pnl)}</div>
+        <div style="font-size:13px;font-weight:700;margin-top:4px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow};flex-shrink:0">${fmtR(c.rate)}</div>`;
     }
     // xs: 라벨만 (extraHtml 없음)
 
     const pad = tier==='xs'?4 : tier==='sm'?5 : 7;
-    return`<div style="position:absolute;left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${bg};border:2px solid var(--bg2);border-radius:7px;cursor:pointer;overflow:hidden;transition:filter .15s;box-sizing:border-box" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter=''" onclick="openAssetPopup('${c.type.replace(/'/g,"\\'")}')">
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:${pad}px;text-align:center;overflow:hidden">${labelHtml}${extraHtml}</div>
+    return`<div style="position:absolute;left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${bg};border:2px solid var(--bg2);border-radius:7px;cursor:pointer;overflow:hidden;transition:filter .15s;box-sizing:border-box" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter=''" onclick="openAssetPopup('${c.type.replace(/'/g,"\\\\'")}')">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:${pad}px;text-align:center;overflow:hidden;min-height:0">${labelHtml}${extraHtml}</div>
     </div>`;
   }).join('');
 }
 
-
-// ── 보기 모드 토글 (트리맵 ↔ 비중 도넛) ──────────────────
 function setAssetView(mode,el){
   assetView=mode;
   document.querySelectorAll('.asset-view-btn').forEach(b=>b.classList.remove('on'));
