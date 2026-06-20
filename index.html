@@ -772,6 +772,21 @@ function rateColor(r){
   if(r>=-10)return'#cc3333';
   return'#ff2222';
 }
+// hex 색상의 상대 밝기(0~255) 계산 → 밝으면 어두운 글씨, 어두우면 밝은 글씨
+function bgLuminance(hex){
+  const h=hex.replace('#','');
+  const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+  return (0.299*r+0.587*g+0.114*b);
+}
+// 트리맵 셀 배경색에 맞는 텍스트 색 세트 반환
+function treemapTextColors(bgHex){
+  const isLight = bgLuminance(bgHex) > 150;
+  return isLight
+    ? { main:'#0a0a0f', sub:'rgba(10,10,15,.78)', shadow:'0 1px 2px rgba(255,255,255,.35)',
+        posSub:'#0a3d24', negSub:'#5a0e0e', rateGood:'#0a3d24', rateBad:'#5a0e0e' }
+    : { main:'#ffffff', sub:'rgba(255,255,255,.82)', shadow:'0 1px 3px rgba(0,0,0,.55)',
+        posSub:'#d6ffe9', negSub:'#ffd6d6', rateGood:'#b7ffdc', rateBad:'#ffb3b3' };
+}
 // 수익률 기반 텍스트 색상
 function rateTxtColor(r){
   if(r>=10) return'var(--pos-hi)';
@@ -795,18 +810,38 @@ function renderTreemap(d){
   const W=wrap.offsetWidth||400,H=300;
   wrap.style.height=H+'px';
   const cells=squarify(typeData.map(x=>({...x,value:x.eval})),0,0,W,H);
+
+  // 셀 크기 단계: xs(라벨만,줄임표) / sm(라벨+%) / md(+평가금액) / lg(+손익+수익률)
   wrap.innerHTML=cells.map(c=>{
-    const mn=Math.min(c.w,c.h),big=mn>80&&c.w>90,mid=mn>46&&c.w>56,sm=mn>26&&c.w>34;
-    const pc=c.rate>=0?'rgba(255,255,255,0.88)':'rgba(255,190,190,0.95)';
-    const col=getTypeColor(c.type);
-    const inner=sm?`
-      <div style="font-size:${big?'14':mid?'11':'9'}px;font-weight:700;color:#fff;text-shadow:0 1px 3px #0008;line-height:1.2">${c.type}${mid?'('+Math.round(c.pct)+'%)':''}</div>
-      ${mid?`<div style="font-size:${big?'11':'9'}px;color:rgba(255,255,255,0.78);margin-top:3px;font-family:'DM Mono',monospace">${fmtN(c.eval)}</div>`:''}
-      ${big?`<div style="font-size:10px;margin-top:3px;font-family:'DM Mono',monospace;color:${pc}">${c.pnl>=0?'+':''}${fmtN(c.pnl)}</div>`:''}
-      ${mid?`<div style="font-size:${big?'13':'10'}px;margin-top:${big?5:2}px;font-weight:700;font-family:'DM Mono',monospace;color:${c.rate>=0?'#b7ffdc':'#ffb3b3'}">${fmtR(c.rate)}</div>`:''}
-    `:'';
-    return`<div style="position:absolute;left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${rateColor(c.rate)};border:2px solid var(--bg2);border-radius:7px;cursor:pointer;overflow:hidden;transition:filter .15s;box-sizing:border-box" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter=''" onclick="openAssetPopup('${c.type.replace(/'/g,"\\'")}')">
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:6px;text-align:center">${inner}</div>
+    const tier = (c.w<48||c.h<34) ? 'xs'
+               : (c.w<78||c.h<54) ? 'sm'
+               : (c.w<110||c.h<78) ? 'md'
+               : 'lg';
+    const bg = rateColor(c.rate);
+    const tc = treemapTextColors(bg); // 배경 밝기 기반 텍스트 색상 세트
+
+    // 라벨: 칸이 좁으면 유형명만, 한 줄, 말줄임
+    const nameFs = tier==='lg'?13 : tier==='md'?12 : tier==='sm'?10.5 : 9.5;
+    const labelHtml = `<div style="font-size:${nameFs}px;font-weight:700;color:${tc.main};text-shadow:${tc.shadow};line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${c.type}</div>`;
+
+    let extraHtml = '';
+    if(tier==='sm'){
+      extraHtml = `<div style="font-size:9.5px;font-weight:700;margin-top:2px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtR(c.rate)}</div>`;
+    } else if(tier==='md'){
+      extraHtml = `
+        <div style="font-size:10px;color:${tc.sub};margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
+        <div style="font-size:12px;font-weight:700;margin-top:3px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${fmtR(c.rate)}</div>`;
+    } else if(tier==='lg'){
+      extraHtml = `
+        <div style="font-size:11px;color:${tc.sub};margin-top:4px;font-family:'DM Mono',monospace;white-space:nowrap;text-shadow:${tc.shadow}">${Math.round(c.pct)}% · ${fmtN(c.eval)}</div>
+        <div style="font-size:10.5px;margin-top:3px;font-family:'DM Mono',monospace;color:${c.pnl>=0?tc.posSub:tc.negSub};white-space:nowrap;text-shadow:${tc.shadow}">${c.pnl>=0?'+':''}${fmtN(c.pnl)}</div>
+        <div style="font-size:14px;font-weight:700;margin-top:5px;font-family:'DM Mono',monospace;color:${c.rate>=0?tc.rateGood:tc.rateBad};white-space:nowrap;text-shadow:${tc.shadow}">${fmtR(c.rate)}</div>`;
+    }
+    // xs: 라벨만 (extraHtml 없음)
+
+    const pad = tier==='xs'?4 : tier==='sm'?5 : 7;
+    return`<div style="position:absolute;left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${bg};border:2px solid var(--bg2);border-radius:7px;cursor:pointer;overflow:hidden;transition:filter .15s;box-sizing:border-box" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter=''" onclick="openAssetPopup('${c.type.replace(/'/g,"\\'")}')">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:${pad}px;text-align:center;overflow:hidden">${labelHtml}${extraHtml}</div>
     </div>`;
   }).join('');
 }
