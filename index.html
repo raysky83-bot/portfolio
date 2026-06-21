@@ -7,6 +7,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap');
+/* 자주 쓰이는 정적 인라인 스타일을 클래스로 추출 (유지보수성 개선) */
+.mb-0{margin-bottom:0}
+.hide{display:none}
+.card-ttl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mono-sub{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+.flex-center-gap{display:flex;align-items:center;gap:8px}
 :root{
   /* 배경 */
   --bg:#080810;--bg2:#0f0f1a;--bg3:#161623;--bg4:#1c1c2e;
@@ -35,6 +41,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradi
 .hdr-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#6c6cff,#3ecf8e);display:flex;align-items:center;justify-content:center;font-size:16px}
 .hdr-title{font-size:14px;font-weight:600}
 .hdr-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.hdr-sub.stale{color:#f5c842}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);box-shadow:0 0 8px var(--pos);flex-shrink:0}
 .live-dot.loading{background:#f5c842;box-shadow:0 0 8px #f5c842;animation:blink .8s infinite}
 .live-dot.error{background:var(--neg);box-shadow:0 0 8px var(--neg)}
@@ -408,8 +415,8 @@ tr:hover td{background:var(--bg3)}
 
       <div class="chart2">
         <div class="ccard">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div class="ccard-ttl" style="margin-bottom:0" id="asset-card-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
+          <div class="card-ttl-row">
+            <div class="ccard-ttl mb-0" id="asset-card-ttl">자산유형별 비중 (탭하면 구성종목 보기)</div>
             <div class="asset-view-toggle">
               <button class="asset-view-btn on" id="av-tree" onclick="setAssetView('tree',this)">▦ 트리맵</button>
               <button class="asset-view-btn" id="av-donut" onclick="setAssetView('donut',this)">◔ 비중</button>
@@ -419,8 +426,8 @@ tr:hover td{background:var(--bg3)}
           <div id="donut-wrap" class="donut-view-wrap" style="display:none"></div>
         </div>
         <div class="ccard">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div class="ccard-ttl" style="margin-bottom:0">종목별 수익률</div>
+          <div class="card-ttl-row">
+            <div class="ccard-ttl mb-0">종목별 수익률</div>
             <div style="display:flex;gap:5px">
               <button id="bs-name" data-col="종목명"  data-label="종목명"  onclick="barSort('종목명')"  class="bar-sort-btn">종목명</button>
               <button id="bs-eval" data-col="평가금액" data-label="평가금액" onclick="barSort('평가금액')" class="bar-sort-btn">평가금액</button>
@@ -476,8 +483,8 @@ tr:hover td{background:var(--bg3)}
       </div>
       <!-- 자산 성장 차트 -->
       <div class="ccard" style="margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="ccard-ttl" style="margin-bottom:0" id="hist-chart-ttl">자산 성장 추이</div>
+        <div class="card-ttl-row">
+          <div class="ccard-ttl mb-0" id="hist-chart-ttl">자산 성장 추이</div>
           <div style="display:flex;gap:10px;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3)" id="hist-chart-legend">
             <span><span style="display:inline-block;width:10px;height:2px;background:#f5a623;vertical-align:middle;margin-right:3px;border-radius:1px"></span>평가금액</span>
             <span><span style="display:inline-block;width:10px;height:2px;background:#ffffff30;vertical-align:middle;margin-right:3px;border-radius:1px;border-top:1px dashed #fff5"></span>원금</span>
@@ -487,16 +494,16 @@ tr:hover td{background:var(--bg3)}
       </div>
       <!-- 일별 손익 바 차트 -->
       <div class="ccard" style="margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="ccard-ttl" style="margin-bottom:0">일별 평가손익</div>
+        <div class="card-ttl-row">
+          <div class="ccard-ttl mb-0">일별 평가손익</div>
           <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">전일 대비 변화</div>
         </div>
         <div style="position:relative;height:120px"><canvas id="c-hist-bar"></canvas></div>
       </div>
       <!-- 수익률 추이 차트 -->
       <div class="ccard">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="ccard-ttl" style="margin-bottom:0" id="hist-rate-ttl">수익률 추이</div>
+        <div class="card-ttl-row">
+          <div class="ccard-ttl mb-0" id="hist-rate-ttl">수익률 추이</div>
           <div style="display:flex;gap:10px;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3)">
             <span><span style="display:inline-block;width:10px;height:2px;background:#3ecf8e;vertical-align:middle;margin-right:3px"></span>보유기준</span>
             <span id="hist-rate-legend2"><span style="display:inline-block;width:10px;height:2px;background:#f5c842;vertical-align:middle;margin-right:3px;border-top:1px dashed #f5c842"></span>★순수익</span>
@@ -674,6 +681,33 @@ const toN=v=>{if(v===null||v===undefined||v===""||v==="-")return null;if(typeof 
 const fmt=n=>n==null?"—":fmtN(n);  // 만원단위 통일
 const fmtW=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR")+"원"; // 원단위(단가용)
 const fmtR=r=>r==null?"—":(r>=0?"+":"")+r.toFixed(1)+"%";
+
+// ── 로딩 체감속도 개선용 캐시 (정확성보다 "표시 속도"만 담당) ──
+// 캐시는 화면을 즉시 보여주기 위한 임시본일 뿐, 진짜 데이터는 항상 fetch로 재확인한다.
+// 수정/추가 직후 재호출이나 수동 새로고침은 이 캐시를 절대 사용하지 않는다.
+const CACHE_KEY="dashboard_cache_v1";
+const CACHE_MAX_AGE_MS=10*60*1000; // 10분 넘으면 화면에 보여주지 않음 (오래된 데이터 노출 방지)
+
+function saveCache(payload){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), payload }));
+  }catch(_){ /* 저장공간 부족 등은 무시 — 캐시는 선택사항이지 필수 아님 */ }
+}
+function loadCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const obj=JSON.parse(raw);
+    if(!obj||!obj.savedAt||!obj.payload) return null;
+    if(Date.now()-obj.savedAt>CACHE_MAX_AGE_MS) return null; // 너무 오래된 캐시는 폐기
+    return obj;
+  }catch(_){ return null; }
+}
+function cacheAgeLabel(savedAt){
+  const sec=Math.floor((Date.now()-savedAt)/1000);
+  if(sec<60) return sec+"초 전";
+  return Math.floor(sec/60)+"분 전";
+}
 // fmtN: 0,000만원 형식 (천단위 콤마 + 만원단위)
 const fmtN=n=>{if(n==null)return"—";const sign=n<0?"-":"";const a=Math.abs(n);const m=Math.round(a/10000);return sign+m.toLocaleString("ko-KR")+"만원";};
 // Hero용: 만원을 작은 글씨로
@@ -965,11 +999,39 @@ function renderBar(d){
 }
 
 // ── 데이터 로드 ──────────────────────────────────────────
-async function loadData(){
+// useCache=true: 캐시가 있으면 먼저 화면에 보여주고 백그라운드에서 갱신 (최초 진입용)
+// useCache=false: 캐시 무시, 항상 fetch부터 (수동 새로고침·수정/추가 후 재호출용 — 정확성 우선)
+async function loadData(useCache){
   const dot=document.getElementById("liveDot"),btn=document.getElementById("syncBtn");
   const err=document.getElementById("errBanner"),ld=document.getElementById("loadingWrap"),main=document.getElementById("mainContent");
-  DATA=[];HIST=[];dot.className="live-dot loading";btn.disabled=true;
-  err.style.display="none";ld.style.display="flex";main.style.display="none";
+  const hdrSub=document.getElementById("hdrSub");
+  btn.disabled=true;
+  err.style.display="none";
+
+  // ① 캐시가 있고 사용 가능하면 즉시 화면에 먼저 표시 (체감 속도 개선)
+  let usedCache=false;
+  if(useCache){
+    const cached=loadCache();
+    if(cached){
+      try{
+        applyLoadedPayload(cached.payload);
+        usedCache=true;
+        dot.className="live-dot loading";
+        hdrSub.textContent="캐시 데이터 · "+cacheAgeLabel(cached.savedAt)+" (갱신 중...)";
+        hdrSub.classList.add("stale");
+        ld.style.display="none";main.style.display="block";
+        buildChips();renderAll();
+      }catch(_){ usedCache=false; }
+    }
+  }
+
+  // 캐시를 못 썼다면 기존처럼 로딩 화면 노출
+  if(!usedCache){
+    DATA=[];HIST=[];dot.className="live-dot loading";
+    ld.style.display="flex";main.style.display="none";
+  }
+
+  // ② 항상 실제 서버 데이터를 fetch — 캐시는 "먼저 보여주기"용일 뿐 진짜 데이터는 이것
   try{
     const res=await fetch(API+"?t="+Date.now(),{method:"GET",redirect:"follow"});
     if(!res.ok)throw new Error("HTTP "+res.status);
@@ -978,40 +1040,59 @@ async function loadData(){
     const json=Array.isArray(raw)?raw:(raw.rows||[]);
     const acctStatsRaw=Array.isArray(raw)?{}:(raw.acctStats||{});
     if(!json.length)throw new Error("데이터 없음");
-    ALIAS=new Map();
-    json.forEach(r=>{const nm=String(r["상품명"]||"").trim(),al=String(r["별칭"]||"").trim();if(nm&&al)ALIAS.set(nm,al);});
-    ACCT_STATS=acctStatsRaw;
-    if(!Object.keys(ACCT_STATS).length) console.warn('[대시보드] ACCT_STATS 없음 — Apps Script를 최신 버전으로 재배포하고 계좌현황 시트를 추가하세요');
-    DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
-      const nm=String(r["상품명"]||"").trim(),cost=toN(r["매입금액"])??0;
-      let ev=toN(r["평가금액"])??0;
-      // 평가금액이 없거나 0인데 자산유형이 "현금"인 경우에만 매입금액으로 대체
-      // (종목명 키워드 방식은 CMA 일반종목을 잘못 현금으로 분류할 수 있어 제거)
-      if((ev===0||ev===null)&&String(r["자산유형"]||"").trim()==="현금")ev=Math.abs(cost);
-      return{계좌:String(r["계좌"]||"").trim(),상품명:nm,자산유형:String(r["자산유형"]||"").trim(),세부분류:String(r["세부분류"]||"").trim(),
-        보유수량:toN(r["보유수량"]),현재가:toN(r["현재가"]),평균매입가:toN(r["평균매입가"]),
-        매입금액:cost,평가금액:ev,평가손익:toN(r["평가손익"])??0,손익률:toN(r["손익률"])??0};
-    });
-    if(!DATA.length)throw new Error("유효 데이터 없음");
-    buildTypeColors(DATA); // 동적 색상 구성
+
+    let hist=[];
     try{
       const hr=await fetch(API+"?type=history&t="+Date.now(),{method:"GET",redirect:"follow"});
       const hj=JSON.parse(await hr.text());
-      if(Array.isArray(hj))HIST=hj.filter(r=>r["날짜"]&&r["총평가금액"]).map(r=>({
-        날짜:String(r["날짜"]).trim(),총평가금액:toN(r["총평가금액"])??0,총매입금액:toN(r["총매입금액"])??0,수익률:toN(r["수익률"])??0
-      })).sort((a,b)=>a.날짜.localeCompare(b.날짜));
+      if(Array.isArray(hj))hist=hj;
     }catch(_){}
+
+    const payload={ json, acctStatsRaw, hist, fetchedAt:Date.now() };
+    applyLoadedPayload(payload);
+    saveCache(payload); // 다음 진입을 위해 최신본으로 캐시 갱신
+
     dot.className="live-dot";
-    document.getElementById("hdrSub").textContent="연동완료 · "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    hdrSub.classList.remove("stale");
+    hdrSub.textContent="연동완료 · "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
     ld.style.display="none";main.style.display="block";
     buildChips();renderAll();
   }catch(e){
-    dot.className="live-dot error";DATA=[];
-    ld.style.display="none";main.style.display="block";
-    err.style.display="block";
-    err.innerHTML=`⚠️ 로드 실패: ${e.message}<br><span style="font-size:11px">→ Apps Script 배포 시 액세스를 <b>모든 사용자(익명 포함)</b>로 설정하세요</span>`;
-    buildChips();renderAll();
+    dot.className="live-dot error";
+    if(!usedCache){ // 캐시도 없고 fetch도 실패한 경우에만 빈 화면 + 에러 배너
+      DATA=[];
+      ld.style.display="none";main.style.display="block";
+      err.style.display="block";
+      err.innerHTML=`⚠️ 로드 실패: ${e.message}<br><span style="font-size:11px">→ Apps Script 배포 시 액세스를 <b>모든 사용자(익명 포함)</b>로 설정하세요</span>`;
+      buildChips();renderAll();
+    }else{
+      // 캐시는 보여줬지만 갱신은 실패한 경우 — 캐시 데이터임을 계속 명시
+      hdrSub.textContent="⚠️ 갱신 실패 · 캐시 데이터 표시 중";
+      hdrSub.classList.add("stale");
+    }
   }finally{btn.disabled=false;}
+}
+
+// fetch/캐시로 얻은 payload를 실제 전역 상태(DATA/HIST/ALIAS 등)에 반영
+function applyLoadedPayload(payload){
+  const { json, acctStatsRaw, hist } = payload;
+  ALIAS=new Map();
+  json.forEach(r=>{const nm=String(r["상품명"]||"").trim(),al=String(r["별칭"]||"").trim();if(nm&&al)ALIAS.set(nm,al);});
+  ACCT_STATS=acctStatsRaw||{};
+  if(!Object.keys(ACCT_STATS).length) console.warn('[대시보드] ACCT_STATS 없음 — Apps Script를 최신 버전으로 재배포하고 계좌현황 시트를 추가하세요');
+  DATA=json.filter(r=>r["계좌"]&&r["상품명"]).map(r=>{
+    const nm=String(r["상품명"]||"").trim(),cost=toN(r["매입금액"])??0;
+    let ev=toN(r["평가금액"])??0;
+    if((ev===0||ev===null)&&String(r["자산유형"]||"").trim()==="현금")ev=Math.abs(cost);
+    return{계좌:String(r["계좌"]||"").trim(),상품명:nm,자산유형:String(r["자산유형"]||"").trim(),세부분류:String(r["세부분류"]||"").trim(),
+      보유수량:toN(r["보유수량"]),현재가:toN(r["현재가"]),평균매입가:toN(r["평균매입가"]),
+      매입금액:cost,평가금액:ev,평가손익:toN(r["평가손익"])??0,손익률:toN(r["손익률"])??0};
+  });
+  if(!DATA.length)throw new Error("유효 데이터 없음");
+  buildTypeColors(DATA);
+  HIST=(hist||[]).filter(r=>r["날짜"]&&r["총평가금액"]).map(r=>({
+    날짜:String(r["날짜"]).trim(),총평가금액:toN(r["총평가금액"])??0,총매입금액:toN(r["총매입금액"])??0,수익률:toN(r["수익률"])??0
+  })).sort((a,b)=>a.날짜.localeCompare(b.날짜));
 }
 
 const isAll=()=>sel.has("all");
@@ -1047,7 +1128,14 @@ function renderAll(){
   if(tab==="history")renderHistory();
   if(tab==="table")renderTable(d);
 }
-window.addEventListener('resize',()=>{if(tab==="overview"&&assetView==='tree')renderTreemap(getD());});
+// resize 디바운스: 드래그 중 연속 호출을 막고 멈춘 뒤 150ms 후 1회만 재렌더링
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(tab==="overview"&&assetView==='tree')renderTreemap(getD());
+  },150);
+});
 
 // ── 상단 요약 카드 ───────────────────────────────────────
 function renderCards(d){
@@ -1722,7 +1810,8 @@ if(stockPopSheet){
 }
 
 
-loadData();
+// 최초 진입 시에만 캐시 우선 사용 (체감 로딩속도 개선) — 새로고침/수정후 호출은 캐시 건너뜀
+loadData(true);
 </script>
 </body>
 </html>
