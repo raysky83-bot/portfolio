@@ -376,7 +376,13 @@ tr:hover td{background:var(--bg3)}
 
   <div id="mainContent" style="display:none">
     <div class="filter-wrap">
-      <div class="filter-label">ACCOUNT FILTER</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+        <div class="filter-label" style="margin-bottom:0">ACCOUNT FILTER</div>
+        <div class="hist-mode-toggle">
+          <button class="hist-mode-btn on" id="fm-single" onclick="setFilterMode('single',this)">단일선택</button>
+          <button class="hist-mode-btn" id="fm-multi" onclick="setFilterMode('multi',this)">다중선택</button>
+        </div>
+      </div>
       <div class="chips" id="chips"></div>
     </div>
     <div class="tabs">
@@ -403,10 +409,14 @@ tr:hover td{background:var(--bg3)}
           <!-- 구분선 -->
           <div style="width:1px;background:var(--border2);align-self:stretch;flex-shrink:0"></div>
           <!-- 투자 원금 -->
-          <div id="cost-card" onclick="toggleCostMode()" style="cursor:pointer;user-select:none;flex:1;min-width:0">
-            <div class="hero-lbl">투자 원금 <span id="cost-mode-badge" style="font-size:8px;padding:1px 6px;border-radius:4px;background:#ffffff10;color:var(--text3);vertical-align:middle;font-weight:600">보유기준</span></div>
-            <div class="hero-val neu count-anim" id="m-cost">—</div>
-            <div class="hero-cnt" style="margin-top:6px" id="m-cost-sub">탭 → 실제 입금기준</div>
+          <div style="flex:1;min-width:0">
+            <div class="hero-lbl">투자 원금</div>
+            <div class="hist-mode-toggle" style="display:inline-flex;margin:2px 0 0">
+              <button class="hist-mode-btn on" id="cm-current" onclick="setCostMode('current',this)">보유기준</button>
+              <button class="hist-mode-btn" id="cm-actual" onclick="setCostMode('actual',this)">★실제입금</button>
+            </div>
+            <div class="hero-val neu count-anim" id="m-cost" style="margin-top:8px">—</div>
+            <div class="hero-cnt" style="margin-top:6px" id="m-cost-sub"></div>
           </div>
         </div>
       </div>
@@ -672,6 +682,7 @@ function buildTypeColors(data){
 }
 
 let DATA=[],HIST=[],ALIAS=new Map(),ACCT_STATS={},sel=new Set(["all"]),tab="overview",CH={};
+let filterMode='single'; // 'single'=계좌 1개만 | 'multi'=여러 계좌 동시 선택
 let costMode='current'; // 'current'=보유기준 | 'actual'=실제입금기준
 let sortCol=null,sortDir=1,modalMode="add",barSortCol="손익률",barSortDir=-1;
 let _tableRows=[],histDays=180,histMode='current',assetView='tree';
@@ -1105,8 +1116,24 @@ function buildChips(){
   mk("전체","all");accts.forEach(a=>mk(a,a));
 }
 function handleChip(k,accts){
-  if(k==="all"){sel=new Set(["all"]);}
-  else{sel.delete("all");if(sel.has(k)){sel.delete(k);if(!sel.size)sel=new Set(["all"]);}else{sel.add(k);if(accts.every(a=>sel.has(a)))sel=new Set(["all"]);}}
+  if(filterMode==='single'){
+    // 단일선택: 같은 칩 다시 누르면 전체로, 아니면 그 계좌 하나만 선택
+    sel = (k==="all"||sel.has(k)&&sel.size===1) ? new Set(["all"]) : new Set([k]);
+  }else{
+    // 다중선택: 기존 토글 누적 방식
+    if(k==="all"){sel=new Set(["all"]);}
+    else{sel.delete("all");if(sel.has(k)){sel.delete(k);if(!sel.size)sel=new Set(["all"]);}else{sel.add(k);if(accts.every(a=>sel.has(a)))sel=new Set(["all"]);}}
+  }
+  buildChips();renderAll();
+}
+function setFilterMode(mode,el){
+  filterMode=mode;
+  document.querySelectorAll('#fm-single,#fm-multi').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  // 모드 전환 시 단일선택으로 좁혀야 하면 첫 계좌만 남기고 정리
+  if(mode==='single' && sel.size>1 && !sel.has('all')){
+    sel = new Set([[...sel][0]]);
+  }
   buildChips();renderAll();
 }
 function switchTab(el){
@@ -1152,7 +1179,12 @@ function renderCards(d){
     const totalIn=accts.reduce((s,a)=>s+(ACCT_STATS[a]?.총입금원금||0),0);
     const totalOut=accts.reduce((s,a)=>s+(ACCT_STATS[a]?.총출금액||0),0);
     if(totalIn>0){baseCost=totalIn;baseLabel="실제입금";baseSub="실제 입금 "+fmtN(totalIn)+(totalOut>0?" · 출금 "+fmtN(totalOut):"");}
-    else{costMode="current";baseLabel="보유기준";baseSub="계좌현황 시트 미입력";}
+    else{
+      costMode="current";baseLabel="보유기준";baseSub="계좌현황 시트 미입력";
+      // 버튼 UI도 강제 복귀
+      const cc=document.getElementById('cm-current'),ca=document.getElementById('cm-actual');
+      if(cc&&ca){cc.classList.add('on');ca.classList.remove('on');}
+    }
   }
 
   const tp=ev-baseCost,tr=baseCost>0?(tp/baseCost)*100:0;
@@ -1160,9 +1192,7 @@ function renderCards(d){
   const costValEl=document.getElementById("m-cost");
   costValEl.innerHTML=fmtNH(baseCost);
   costValEl.className="hero-val neu count-anim";
-  document.getElementById("cost-mode-badge").textContent=baseLabel;
-  document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"탭 → 실제 입금기준";
-  document.getElementById("cost-card").style.borderColor=costMode==="actual"?"var(--accent)":"";
+  document.getElementById("m-cost-sub").textContent=costMode==="actual"?baseSub:"";
   // 손익 + 수익률 괄호 한 줄 표시
   const rateCls=tr>=10?"pos-hi":tr>=0?"pos":"neg";
   const pnlEl=document.getElementById("m-pnl");
@@ -1175,22 +1205,18 @@ function renderCards(d){
   if(re){re.textContent=fmtR(tr);re.className=rateCls;}
 }
 
-function toggleCostMode(){
-  if(costMode==="current" && !Object.keys(ACCT_STATS).length){
-    // ACCT_STATS 없음 → 안내
-    const badge=document.getElementById("cost-mode-badge");
+function setCostMode(mode,el){
+  if(mode==="actual" && !Object.keys(ACCT_STATS).length){
+    // ACCT_STATS 없음 → 안내 후 자동 복귀
     const sub=document.getElementById("m-cost-sub");
-    badge.textContent="미설정";
-    badge.style.color="#f5c842";
     sub.textContent="⚠️ 계좌현황 시트 + Apps Script 재배포 필요";
     sub.style.color="#f5c842";
-    setTimeout(()=>{
-      badge.textContent="보유기준";badge.style.color="";
-      sub.textContent="탭하면 실제 입금 기준으로 전환";sub.style.color="";
-    },3000);
+    setTimeout(()=>{ sub.textContent=""; sub.style.color=""; },3000);
     return;
   }
-  costMode=costMode==="current"?"actual":"current";
+  costMode=mode;
+  document.querySelectorAll('#cm-current,#cm-actual').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
   renderCards(getD());
 }
 
